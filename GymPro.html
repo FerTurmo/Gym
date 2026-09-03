@@ -1,349 +1,403 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>GymPro</title>
-<style>
-:root{--bg:#0b0d10;--card:#15181d;--card2:#1d2229;--line:#303640;--text:#f5f7fa;--muted:#98a1ad;--accent:#e4b45e;--ok:#55d98b;--warn:#f0b85b;--danger:#ef7373}*{box-sizing:border-box}
-
-html, body {
-    margin: 0;
-    padding: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    position: fixed;
-}
-
-.app {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    width: 100%;
-    max-width: 760px;
-    margin: auto;
-}
-
-.top {
-    flex-shrink: 0;
-    background: var(--bg);
-    padding: 10px 16px 5px;
-    display: flex;
-    flex-direction: column;
-    z-index: 10;
-    border-bottom: 1px solid var(--line);
-}
-
-.top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.progress {
-    height: 4px;
-    background: var(--card2);
-    border-radius: 9px;
-    margin: 12px 0 5px;
-    overflow: hidden;
-}
-.progress i {
-    display: block;
-    height: 100%;
-    background: var(--accent);
-    width: 0;
-    transition: width 0.3s ease;
-}
-
-.screen {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 20px 16px 60px;
-    -webkit-overflow-scrolling: touch;
-    display: none;
-}
-
-.screen.active {
-    display: flex;
-    flex-direction: column;
-}
-
-.logo { font-size:24px; font-weight:900 }
-.eyebrow { font-size:11px; font-weight:900; letter-spacing:1.2px; text-transform:uppercase; color:var(--accent); margin-bottom:9px }
-h1 { font-size:42px; line-height:1.02; letter-spacing:-1.6px; margin:0 0 18px }
-h2 { font-size:30px; letter-spacing:-.8px; margin:0 0 10px }
-h3 { margin:0 0 9px }
-.lead, .muted { color:var(--muted); line-height:1.55 }
-.hero { padding:42px 0 }
-.card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin:14px 0 }
-.field { margin:18px 0 }
-.field>label { display:block; font-weight:750; margin-bottom:9px }
-.hint { font-size:12px; color:var(--muted); line-height:1.45; margin-top:7px }
-
-.input {
-    width: 100%;
-    padding: 13px;
-    font-size: 16px;
-    border-radius: 11px;
-    border: 1px solid var(--line);
-    background: #0f1216;
-    color: var(--text);
-    outline: none;
-}
-.input:focus { border-color:var(--accent) }
-
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:9px }
-.choices { display:grid; gap:9px }
-.choice { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:12px; padding:13px; text-align:left; cursor:pointer; min-height:52px }
-.choice.selected { border-color:var(--accent); background:#2b2418 }
-.choice small { display:block; color:var(--muted); margin-top:4px }
-.actions { display:flex; gap:9px; margin-top:22px }
-.btn { border:0; border-radius:11px; padding:13px 17px; font-weight:850; cursor:pointer }
-.primary { background:var(--accent); color:#111 }
-.secondary { background:var(--card2); border:1px solid var(--line); color:var(--text) }
-.back { border:0; background:none; color:var(--muted); padding:0; margin-bottom:20px; cursor:pointer }
-.hidden { display:none!important }
-.error { display:none; color:var(--danger); font-size:13px; margin-top:9px }
-.tag { display:inline-block; padding:5px 8px; border-radius:7px; background:#2b2418; color:var(--accent); font-size:10px; font-weight:900; letter-spacing:.5px }
-.summary { display:grid; grid-template-columns:1fr 1fr; gap:9px }
-.stat { background:var(--card2); padding:13px; border-radius:12px }
-.stat span { font-size:11px; color:var(--muted) }
-.stat b { display:block; margin-top:4px }
-.phase { border:1px solid var(--line); border-radius:15px; padding:16px; margin:9px 0; background:var(--card) }
-.phase.current { border-color:var(--accent) }
-.phase.locked { opacity:.52 }
-.phase .desc { font-size:13px; color:var(--muted); line-height:1.45; margin-top:6px }
-.arrow { text-align:center; color:var(--muted) }
-.tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin:15px 0 }
-.tab { border:1px solid var(--line); background:var(--card); color:var(--muted); padding:10px; border-radius:10px; font-weight:800 }
-.tab.active { color:var(--text); border-color:var(--accent); background:#2b2418 }
-.workout { border:1px solid var(--line); border-radius:15px; margin:10px 0; overflow:hidden }
-.whead { padding:14px; background:var(--card2); display:flex; justify-content:space-between; gap:10px }
-.exercise { padding:13px; border-top:1px solid var(--line); background:var(--card) }
-.row { display:flex; justify-content:space-between; gap:10px }
-.sets { font-size:12px; color:var(--muted); margin-top:4px }
-.mini { font-size:11px; color:var(--muted) }
-.check { width:20px; height:20px }
-.banner { padding:15px; border-radius:14px; border:1px solid var(--line); background:var(--card2); margin:12px 0 }
-.banner.ok { border-color:var(--ok) }
-.banner.warn { border-color:var(--warn) }
-.smallbtn { padding:9px 11px; border-radius:9px; border:1px solid var(--line); background:var(--card2); color:var(--text); cursor:pointer }
-.metric { display:grid; grid-template-columns:1fr 1fr; gap:9px }
-.modal { position:fixed; inset:0; background:#000b; display:none; align-items:flex-end; justify-content:center; z-index:5 }
-.modal.show { display:flex }
-.sheet { width:min(760px,100%); background:var(--card); border:1px solid var(--line); border-radius:20px 20px 0 0; padding:20px; max-height:85vh; overflow:auto }
-.list { display:grid; gap:8px }
-.footer { color:var(--muted); font-size:11px; margin-top:30px; text-align:center }
-@media(max-width:520px){ .grid, .summary, .metric { grid-template-columns:1fr } h1 { font-size:36px } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+    <title>GymPro - Tu entrenamiento personalizado</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ===== RESET Y BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            overflow-x: hidden;
+        }
+        
+        /* ===== HEADER FIJO ===== */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            padding: 16px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        header .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: #2563eb;
+            text-decoration: none;
+        }
+        
+        header .logo span {
+            color: #0f172a;
+        }
+        
+        /* ===== MAIN CONTENT ===== */
+        main {
+            padding: 24px;
+            max-width: 720px;
+            margin: 0 auto;
+            padding-bottom: 100px; /* Espacio para el footer */
+        }
+        
+        /* ===== SECCIONES ===== */
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        
+        .section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .section p {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        /* ===== FORMULARIOS ===== */
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px; /* Evita zoom en iOS */
+            font-family: 'Inter', sans-serif;
+            transition: border 0.2s;
+            background: white;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        /* ===== BOTONES ===== */
+        .btn {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .btn:active {
+            transform: scale(0.97);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        
+        /* ===== FOOTER FIJO ===== */
+        footer {
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+            background: white;
+            padding: 16px 24px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 14px;
+            color: #94a3b8;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.04);
+        }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            header { padding: 12px 16px; }
+            header .logo { font-size: 18px; }
+            main { padding: 16px; padding-bottom: 80px; }
+            .section { padding: 16px; }
+        }
+    </style>
 </head>
 <body>
-<div class="app">
-  <div class="top">
-    <div class="top-row">
-      <div class="logo">GymPro</div>
-      <button id="resetBtn" class="smallbtn hidden" onclick="resetApp()">Reiniciar</button>
-    </div>
-    <div class="progress"><i id="bar"></i></div>
-  </div>
+    <!-- ===== HEADER ===== -->
+    <header>
+        <a href="#" class="logo">Gym<span>Pro</span></a>
+        <div>
+            <i class="fas fa-user-circle" style="font-size: 24px; color: #2563eb;"></i>
+        </div>
+    </header>
 
-  <section id="intro" class="screen active">
-    <div class="hero">
-      <div class="eyebrow">Tu entrenamiento. Tu camino.</div>
-      <h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1>
-      <p class="lead">GymPro construye un camino personalizado desde tu punto de partida, te guía sesión a sesión y te avisa cuándo toca progresar o pasar a la siguiente fase.</p>
-      <div class="actions"><button class="btn primary" onclick="show('personal',1)">Empezar</button></div>
-    </div>
-  </section>
+    <!-- ===== MAIN CONTENT ===== -->
+    <main>
+        <!-- Título principal -->
+        <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="font-size: 28px; font-weight: 800; line-height: 1.2;">
+                No te damos una rutina.<br>
+                Te llevamos hasta tu objetivo.
+            </h1>
+            <p style="color: #64748b; margin-top: 8px; font-size: 16px;">
+                GymPro construye un camino personalizado desde tu punto de partida.
+            </p>
+        </div>
 
-  <section id="personal" class="screen">
-    <button class="back" onclick="show('intro',0)">← Volver</button>
-    <div class="eyebrow">1 · Conócete</div>
-    <h2>Vamos a conocerte un poco</h2>
-    <p class="muted">Solo necesitamos lo essencial para construir tu primer plan.</p>
-    <div class="card">
-      <div class="field"><label>Edad</label><input id="age" class="input" type="number" min="13" max="100" placeholder="Ej. 32"></div>
-      <div class="field"><label>Sexo</label><div class="grid" id="sex"><button class="choice" data-v="male" onclick="pick('sex',this)">Hombre</button><button class="choice" data-v="female" onclick="pick('sex',this)">Mujer</button></div></div>
-      <div class="grid"><div class="field"><label>Altura (cm)</label><input id="height" class="input" type="number" min="100" max="230" placeholder="180"></div><div class="field"><label>Peso (kg)</label><input id="weight" class="input" type="number" min="30" max="250" step="0.1" placeholder="70"></div></div>
-      <div class="field"><label>¿Cómo describirías tu estado físico actual?</label><div class="grid" id="physique"><button class="choice" data-v="very_thin" onclick="pick('physique',this)">Muy delgado</button><button class="choice" data-v="thin" onclick="pick('physique',this)">Delgado</button><button class="choice" data-v="normal" onclick="pick('physique',this)">Normal</button><button class="choice" data-v="some_fat" onclick="pick('physique',this)">Algo de grasa</button><button class="choice" data-v="fat" onclick="pick('physique',this)">Bastante grasa</button><button class="choice" data-v="muscular" onclick="pick('physique',this)">Musculoso</button><button class="choice" data-v="very_muscular" onclick="pick('physique',this)">Muy musculoso</button></div></div>
-      <div id="e1" class="error">Completa todos los datos.</div>
-    </div>
-    <button class="btn primary" onclick="personalNext()">Continuar</button>
-  </section>
+        <!-- ===== PASO 1: CONÓCETE ===== -->
+        <div class="section" id="paso1">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="background: #2563eb; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">1</span>
+                <h2 style="margin: 0;">Conócete</h2>
+            </div>
+            <p>Vamos a conocerte un poco. Solo necesitamos lo esencial para construir tu primer plan.</p>
+            
+            <div class="form-group">
+                <label for="nombre">Nombre completo</label>
+                <input type="text" id="nombre" placeholder="Ej: Juan Pérez">
+            </div>
+            
+            <div class="form-group">
+                <label for="edad">Edad</label>
+                <input type="number" id="edad" placeholder="Ej: 28">
+            </div>
+            
+            <div class="form-group">
+                <label for="peso">Peso (kg)</label>
+                <input type="number" id="peso" placeholder="Ej: 75" step="0.5">
+            </div>
+            
+            <div class="form-group">
+                <label for="altura">Altura (cm)</label>
+                <input type="number" id="altura" placeholder="Ej: 175">
+            </div>
+        </div>
 
-  <section id="experience" class="screen">
-    <button class="back" onclick="show('personal',1)">← Volver</button>
-    <div class="eyebrow">2 · Experiencia</div>
-    <h2>¿Cuál es tu experiencia entrenando?</h2>
-    <div class="card choices" id="exp">
-      <button class="choice" data-v="beginner" onclick="pick('exp',this)">Principiante<small>Nunca o casi nunca he entrenado</small></button>
-      <button class="choice" data-v="intermediate" onclick="pick('exp',this)">Intermedio<small>Llevo tiempo entrenando y sigo progresando</small></button>
-      <button class="choice" data-v="advanced" onclick="pick('exp',this)">Avanzado<small>Llevo años entrenando y tengo bastante experiencia</small></button>
-    </div>
-    <div id="e2" class="error">Selecciona tu nivel.</div>
-    <button class="btn primary" onclick="expNext()">Continuar</button>
-  </section>
+        <!-- ===== PASO 2: EXPERIENCIA ===== -->
+        <div class="section" id="paso2">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="background: #2563eb; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">2</span>
+                <h2 style="margin: 0;">Experiencia</h2>
+            </div>
+            <p>¿Cuál es tu experiencia entrenando?</p>
+            
+            <div class="form-group">
+                <select id="experiencia">
+                    <option value="">Selecciona tu nivel</option>
+                    <option value="principiante">Principiante (menos de 3 meses)</option>
+                    <option value="intermedio">Intermedio (3-12 meses)</option>
+                    <option value="avanzado">Avanzado (más de 1 año)</option>
+                </select>
+            </div>
+        </div>
 
-  <section id="goal" class="screen">
-    <button class="back" onclick="show('experience',2)">← Volver</button>
-    <div class="eyebrow">3 · Objetivo</div>
-    <h2>¿Qué quieres conseguir?</h2>
-    <p class="muted">Elige un único objetivo principal. Tus demás datos nos dirán cómo llegar hasta él.</p>
-    <div class="card choices" id="goals">
-      <button class="choice" data-v="muscle" onclick="goalPick(this)">💪 Ganar músculo</button>
-      <button class="choice" data-v="fat" onclick="goalPick(this)">🔥 Perder grasa</button>
-              <button class="choice" data-v="recomp" onclick="goalPick(this)">⚖️ Ganar músculo y perder grasa</button>
-      <button class="choice" data-v="athletic" onclick="goalPick(this)">🏃 Conseguir un cuerpo atlético</button>
-      <button class="choice" data-v="bodybuilder" onclick="goalPick(this)">🏆 Conseguir un físico muy musculado</button>
-      <button class="choice" data-v="health" onclick="goalPick(this)">❤️ Mantenerme en forma y saludable</button>
-      <button class="choice" data-v="sport" onclick="goalPick(this)">⚡ Mejorar mi rendimiento deportivo</button>
-    </div>
-    <div id="sportBox" class="card hidden"><label><b>¿Qué deporte practicas?</b></label><div class="grid" id="sports"><button class="choice" data-v="football" onclick="pick('sports',this)">⚽ Fútbol</button><button class="choice" data-v="basketball" onclick="pick('sports',this)">🏀 Baloncesto</button><button class="choice" data-v="rugby" onclick="pick('sports',this)">🏉 Rugby</button><button class="choice" data-v="running" onclick="pick('sports',this)">🏃 Running</button><button class="choice" data-v="cycling" onclick="pick('sports',this)">🚴 Ciclismo</button><button class="choice" data-v="triathlon" onclick="pick('sports',this)">🏊 Triatlón</button><button class="choice" data-v="swimming" onclick="pick('sports',this)">🏊 Natación</button><button class="choice" data-v="tennis" onclick="pick('sports',this)">🎾 Tenis</button><button class="choice" data-v="padel" onclick="pick('sports',this)">🎾 Pádel</button><button class="choice" data-v="combat" onclick="pick('sports',this)">🥊 Combate</button><button class="choice" data-v="outdoor" onclick="pick('sports',this)">🏔️ Montaña / outdoor</button></div></div>
-    <div id="e3" class="error">Selecciona un objetivo y, si corresponde, un deporte.</div>
-    <button class="btn primary" onclick="goalNext()">Continuar</button>
-  </section>
+        <!-- ===== PASO 3: OBJETIVO ===== -->
+        <div class="section" id="paso3">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="background: #2563eb; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">3</span>
+                <h2 style="margin: 0;">Objetivo</h2>
+            </div>
+            <p>¿Qué quieres conseguir? Elige un único objetivo principal.</p>
+            
+            <div class="form-group">
+                <select id="objetivo">
+                    <option value="">Selecciona un objetivo</option>
+                    <option value="perder_peso">Perder peso</option>
+                    <option value="ganar_musculo">Ganar músculo</option>
+                    <option value="mantener">Mantener forma</option>
+                    <option value="rendimiento">Mejorar rendimiento deportivo</option>
+                </select>
+            </div>
+        </div>
 
-  <section id="config" class="screen">
-    <button class="back" onclick="show('goal',3)">← Volver</button>
-    <div class="eyebrow">4 · Tu entrenamiento</div>
-    <h2>Ahora configuramos tu entrenamiento</h2>
-    <div class="card">
-      <div class="field"><label>Sesiones mínimas por semana</label><div class="grid" id="minDays"><button class="choice" data-v="1" onclick="pick('minDays',this)">1 sesión</button><button class="choice" data-v="2" onclick="pick('minDays',this)">2 sesiones</button><button class="choice" data-v="3" onclick="pick('minDays',this)">3 sesiones</button><button class="choice" data-v="4" onclick="pick('minDays',this)">4 sesiones</button><button class="choice" data-v="5" onclick="pick('minDays',this)">5 sesiones</button><button class="choice" data-v="6" onclick="pick('minDays',this)">6 sesiones</button><button class="choice" data-v="7" onclick="pick('minDays',this)">7 sesiones</button></div></div>
-      <div class="field"><label>Sesiones máximas por semana</label><select id="maxDays" class="input"><option value="">Selecciona</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select><div class="hint">No asignamos rutinas a lunes/martes. Son sesiones en la semana. Las sesiones extra son opcionales.</div></div>
-      <div class="field"><label>Tiempo habitual por sesión</label><div class="grid" id="duration"><button class="choice" data-v="30" onclick="pick('duration',this)">30 min</button><button class="choice" data-v="45" onclick="pick('duration',this)">45 min</button><button class="choice" data-v="60" onclick="pick('duration',this)">60 min</button><button class="choice" data-v="75" onclick="pick('duration',this)">75 min</button><button class="choice" data-v="90" onclick="pick('duration',this)">90+ min</button></div></div>
-      <div class="field"><label>¿Dónde entrenas?</label><div class="grid" id="location"><button class="choice" data-v="gym" onclick="pick('location',this)">🏋️ Gimnasio</button><button class="choice" data-v="home" onclick="pick('location',this)">🏠 Casa</button><button class="choice" data-v="outdoor" onclick="pick('location',this)">🌳 Exterior</button><button class="choice" data-v="mixed" onclick="pick('location',this)">🔄 Mixto</button></div></div>
-      <div class="field"><label>¿Qué equipamiento te gusta utilizar?</label><div class="grid" id="equipment"><button class="choice" data-v="machines" onclick="toggle('equipment',this)">Máquinas</button><button class="choice" data-v="cables" onclick="toggle('equipment',this)">Poleas</button><button class="choice" data-v="dumbbells" onclick="toggle('equipment',this)">Mancuernas</button><button class="choice" data-v="barbells" onclick="toggle('equipment',this)">Barras y discos</button><button class="choice" data-v="bodyweight" onclick="toggle('equipment',this)">Peso corporal</button><button class="choice" data-v="kettlebells" onclick="toggle('equipment',this)">Kettlebells</button><button class="choice" data-v="bands" onclick="toggle('equipment',this)">Bandas</button></div></div>
-      <div class="field"><label style="display:flex;gap:9px;align-items:center"><input id="advancedCheck" type="checkbox"> Quiero personalizar aún más mi entrenamiento</label><div class="hint">Podrás priorizar músculos, cardio, estructura y zonas a proteger.</div></div>
-      <div id="e4" class="error">Completa los datos necesarios. El máximo no puede ser menor que el mínimo.</div>
-    </div>
-    <button class="btn primary" onclick="configNext()">Continuar</button>
-  </section>
+        <!-- ===== PASO 4: CONFIGURACIÓN ===== -->
+        <div class="section" id="paso4">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <span style="background: #2563eb; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">4</span>
+                <h2 style="margin: 0;">Tu entrenamiento</h2>
+            </div>
+            <p>¿Cuántas sesiones a la semana puedes hacer? (mínimo y máximo)</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="min_sesiones">Mínimo</label>
+                    <input type="number" id="min_sesiones" placeholder="3" min="1" max="7">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="max_sesiones">Máximo</label>
+                    <input type="number" id="max_sesiones" placeholder="5" min="1" max="7">
+                </div>
+            </div>
+        </div>
 
-  <section id="advanced" class="screen">
-    <button class="back" onclick="show('config',4)">← Volver</button>
-    <div class="eyebrow">Configuración avanzada · opcional</div>
-    <h2>Personaliza aún más tu entrenamiento</h2>
-    <p class="muted">Todo es opcional. Si no lo sabes, GymPro decide por ti.</p>
-    <div class="card">
-      <div class="field"><label>¿Qué quieres priorizar? (máximo 2)</label><div class="grid" id="priority"><button class="choice" data-v="chest" onclick="limitPick('priority',this,2)">Pecho</button><button class="choice" data-v="back" onclick="limitPick('priority',this,2)">Espalda</button><button class="choice" data-v="shoulders" onclick="limitPick('priority',this,2)">Hombros</button><button class="choice" data-v="arms" onclick="limitPick('priority',this,2)">Brazos</button><button class="choice" data-v="core" onclick="limitPick('priority',this,2)">Core</button><button class="choice" data-v="glutes" onclick="limitPick('priority',this,2)">Glúteos</button><button class="choice" data-v="legs" onclick="limitPick('priority',this,2)">Piernas</button></div></div>
-      <div class="field"><label>Preferencia de enfoque</label><div class="grid" id="style"><button class="choice" data-v="balanced" onclick="pick('style',this)">Equilibrado</button><button class="choice" data-v="aesthetic" onclick="pick('style',this)">Más estética</button><button class="choice" data-v="performance" onclick="pick('style',this)">Más rendimiento</button></div></div>
-      <div class="field"><label>¿Qué estructura prefieres?</label><div class="grid" id="split"><button class="choice" data-v="auto" onclick="pick('split',this)">Tú decide</button><button class="choice" data-v="fullbody" onclick="pick('split',this)">Full body</button><button class="choice" data-v="upperlower" onclick="pick('split',this)">Superior / inferior</button><button class="choice" data-v="ppl" onclick="pick('split',this)">Push / Pull / Legs</button></div></div>
-      <div class="field"><label>Zonas a proteger</label><div class="grid" id="limits"><button class="choice" data-v="shoulder" onclick="toggle('limits',this)">Hombros</button><button class="choice" data-v="elbow" onclick="toggle('limits',this)">Codos</button><button class="choice" data-v="wrist" onclick="toggle('limits',this)">Muñecas</button><button class="choice" data-v="back" onclick="toggle('limits',this)">Espalda</button><button class="choice" data-v="hip" onclick="toggle('limits',this)">Cadera</button><button class="choice" data-v="knee" onclick="toggle('limits',this)">Rodillas</button><button class="choice" data-v="ankle" onclick="toggle('limits',this)">Tobillos</button><button class="choice" data-v="foot" onclick="toggle('limits',this)">Pies</button></div><div class="hint">Sirve para filtrar ejercicios; no sustituye una valoración médica.</div></div>
-    </div>
-    <button class="btn primary" onclick="finishPlan()">Generar mi roadmap</button>
-  </section>
+        <!-- ===== BOTÓN GUARDAR ===== -->
+        <button class="btn" id="guardarBtn">
+            <i class="fas fa-save"></i> Guardar y generar plan
+        </button>
+        
+        <!-- ===== ROADMAP ===== -->
+        <div class="section" style="margin-top: 24px; background: #f1f5f9;">
+            <h2 style="font-size: 18px;">Tu Roadmap</h2>
+            <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                <div style="text-align: center; flex: 1;">
+                    <div style="background: #2563eb; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                    <p style="font-size: 12px; margin-top: 4px; font-weight: 600;">Entrenamiento</p>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="background: #cbd5e1; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <p style="font-size: 12px; margin-top: 4px; color: #94a3b8;">Seguimiento</p>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="background: #cbd5e1; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <p style="font-size: 12px; margin-top: 4px; color: #94a3b8;">Progreso</p>
+                </div>
+            </div>
+        </div>
+    </main>
 
-  <section id="roadmap" class="screen">
-    <div class="eyebrow">Tu camino</div>
-    <h2 id="rTitle"></h2><p id="rIntro" class="muted"></p>
-    <div id="summary" class="summary"></div>
-    <h3 style="margin-top:25px">Roadmap</h3><div id="phases"></div><div id="coachMsg" class="banner"></div>
-    <div class="actions"><button class="btn primary" onclick="openDashboard()">Ir a mi entrenamiento</button><button class="btn secondary" onclick="show('tracking',8);renderMetrics()">Seguimiento</button></div>
-  </section>
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p>© 2026 GymPro · Tu entrenamiento personalizado</p>
+    </footer>
+    <script>
+        // ===== SOLUCIÓN PARA EL BUG DEL TECLADO EN IPHONE =====
+        document.addEventListener('focusin', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                // Cuando un input recibe foco, el footer se vuelve relativo para que no suba
+                const footer = document.querySelector('footer');
+                if (footer) {
+                    footer.style.position = 'relative';
+                    footer.style.bottom = 'auto';
+                }
+                // Añadimos clase al body para ajustar padding si es necesario
+                document.body.classList.add('keyboard-open');
+            }
+        });
 
-  <section id="dashboard" class="screen">
-    <div class="eyebrow">GymPro Coach</div>
-    <h2>Tu entrenamiento</h2>
-    <div id="dashCoach" class="banner"></div>
-    <div class="tabs"><button class="tab active" onclick="tab('next',this)">Siguiente</button><button class="tab" onclick="tab('road',this)">Roadmap</button><button class="tab" onclick="tab('track',this)">Progreso</button></div>
-    <div id="tab-next"></div><div id="tab-road" class="hidden"></div><div id="tab-track" class="hidden"></div>
-  </section>
-  <section id="tracking" class="screen">
-    <button class="back" onclick="openDashboard()">← Volver</button>
-    <div class="eyebrow">Seguimiento</div>
-    <h2>Tu progreso</h2><p class="muted">No necesitas registrar todo. GymPro trabajará con lo que tengas.</p>
-    <div class="card"><div class="metric"><div><label class="mini">Peso actual (opcional)</label><input id="logWeight" class="input" type="number" step="0.1" placeholder="kg"></div><div><label class="mini">% grasa (opcional)</label><input id="logFat" class="input" type="number" step="0.1" min="1" max="70" placeholder="%"></div></div><div class="actions"><button class="btn primary" onclick="saveMetrics()">Guardar</button></div></div>
-    <div id="metricHistory"></div>
-    <div class="card"><h3>¿Cómo sientes tu progreso?</h3><div class="grid" id="selfCheck"><button class="choice" data-v="worse" onclick="pick('selfCheck',this)">🔴 Voy peor</button><button class="choice" data-v="same" onclick="pick('selfCheck',this)">🟡 Igual</button><button class="choice" data-v="better" onclick="pick('selfCheck',this)">🟢 Voy mejor</button></div><div class="actions"><button class="btn primary" onclick="evaluateCoach()">Evaluar mi fase</button></div></div>
-    <div id="evaluation"></div>
-  </section>
+        document.addEventListener('focusout', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                // Cuando se pierde el foco, restauramos el footer a sticky
+                const footer = document.querySelector('footer');
+                if (footer) {
+                    footer.style.position = 'sticky';
+                    footer.style.bottom = '0';
+                }
+                document.body.classList.remove('keyboard-open');
+            }
+        });
 
-  <div id="subModal" class="modal"><div class="sheet"><button class="back" onclick="closeModal()">✕ Cerrar</button><h2 id="subTitle">Sustituir ejercicio</h2><p class="muted">Elige una alternativa equivalente. El cambio solo afecta a tu plan actual y no alimenta futuras recomendaciones en esta versión.</p><div id="subList" class="list"></div></div></div>
-  <div class="footer">GymPro · Tu plan se adapta a tu progreso, no al calendario.</div>
-</div>
+        // ===== GUARDAR DATOS EN LOCALSTORAGE =====
+        document.getElementById('guardarBtn').addEventListener('click', function() {
+            const nombre = document.getElementById('nombre').value;
+            const edad = document.getElementById('edad').value;
+            const peso = document.getElementById('peso').value;
+            const altura = document.getElementById('altura').value;
+            const experiencia = document.getElementById('experiencia').value;
+            const objetivo = document.getElementById('objetivo').value;
+            const minSesiones = document.getElementById('min_sesiones').value;
+            const maxSesiones = document.getElementById('max_sesiones').value;
 
-<script>
-const KEY='gympro_v3';const S=JSON.parse(localStorage.getItem(KEY)||'{}');S.phaseState=S.phaseState||{index:0,declines:0,lastRecommendation:0};S.metrics=S.metrics||[];S.completed=S.completed||0;S.nextSession=S.nextSession||1;S.startDate=S.startDate||Date.now();
-const labels={muscle:'Ganar músculo',fat:'Perder grasa',recomp:'Ganar músculo + perder grasa',athletic:'Cuerpo atlético',bodybuilder:'Físico muy musculado',health:'Forma y salud',sport:'Rendimiento deportivo'};
-const phys={very_thin:'Muy delgado',thin:'Delgado',normal:'Normal',some_fat:'Algo de grasa',fat:'Bastante grasa',muscular:'Musculoso',very_muscular:'Muy musculoso'};const exp={beginner:'Principiante',intermediate:'Intermedio',advanced:'Avanzado'};const sports={football:'Fútbol',basketball:'Baloncesto',rugby:'Rugby',running:'Running',cycling:'Ciclismo',triathlon:'Triatlón',swimming:'Natación',tennis:'Tenis',padel:'Pádel',combat:'Combate',outdoor:'Montaña / outdoor'};
-const EX=[
-{name:'Press de banca con barra',m:'chest',eq:'barbells',alts:['Press con mancuernas','Press en máquina','Press convergente']},
-{name:'Press inclinado con mancuernas',m:'chest',eq:'dumbbells',alts:['Press inclinado en máquina','Press inclinado en multipower']},
-{name:'Aperturas en polea',m:'chest',eq:'cables',alts:['Pec deck','Aperturas con mancuernas']},
-{name:'Jalón al pecho',m:'back',eq:'cables',alts:['Dominadas asistidas','Jalón en máquina']},
-{name:'Remo con barra',m:'back',eq:'barbells',alts:['Remo en máquina','Remo con mancuerna']},
-{name:'Remo sentado en polea',m:'back',eq:'cables',alts:['Remo en máquina']},
-{name:'Press militar',m:'shoulders',eq:'barbells',alts:['Press de hombros en máquina','Press con mancuernas']},
-{name:'Elevaciones laterales',m:'shoulders',eq:'dumbbells',alts:['Elevaciones laterales en polea','Máquina de laterales']},
-{name:'Curl de bíceps',m:'arms',eq:'dumbbells',alts:['Curl en polea','Curl en máquina']},
-{name:'Extensión de tríceps en polea',m:'arms',eq:'cables',alts:['Fondos asistidos','Extensión en máquina']},
-{name:'Prensa de piernas',m:'legs',eq:'machines',alts:['Hack squat','Sentadilla goblet']},
-{name:'Peso muerto rumano',m:'legs',eq:'barbells',alts:['Rumano con mancuernas','Curl femoral']},
-{name:'Curl femoral',m:'legs',eq:'machines',alts:['Curl femoral sentado','Peso muerto rumano']},
-{name:'Extensión de cuádriceps',m:'legs',eq:'machines',alts:['Sentadilla hack','Prensa de piernas']},
-{name:'Hip thrust',m:'glutes',eq:'barbells',alts:['Hip thrust en máquina','Puente de glúteo']},
-{name:'Plancha',m:'core',eq:'bodyweight',alts:['Crunch en polea','Dead bug']}
-];
+            // Validación básica
+            if (!nombre || !edad || !peso || !altura) {
+                alert('Por favor, completa todos los datos personales.');
+                return;
+            }
 
-function save(){localStorage.setItem(KEY,JSON.stringify(S))}function el(id){return document.getElementById(id)}function show(id,step){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));el(id).classList.add('active');el('bar').style.width=(step>=8?100:step/8*100)+'%';el('resetBtn').classList.toggle('hidden',id==='intro');scrollTo(0,0)}
-function pick(id,node){document.querySelectorAll('#'+id+' .choice').forEach(x=>x.classList.remove('selected'));node.classList.add('selected');S[id]=node.dataset.v;save()}function toggle(id,node){node.classList.toggle('selected');S[id]=[...document.querySelectorAll('#'+id+' .selected')].map(x=>x.dataset.v);save()}function limitPick(id,node,n){const a=S[id]||[];if(node.classList.contains('selected')){node.classList.remove('selected');S[id]=a.filter(x=>x!==node.dataset.v)}else if(a.length<n){node.classList.add('selected');S[id]=[...a,node.dataset.v]}save()}
-function personalNext(){S.age=+el('age').value;S.height=+el('height').value;S.weight=+el('weight').value;if(!S.age||!S.height||!S.weight||!S.sex||!S.physique){el('e1').style.display='block';return}el('e1').style.display='none';show('experience',2)}function expNext(){if(!S.exp){el('e2').style.display='block';return}el('e2').style.display='none';show('goal',3)}function goalPick(node){pick('goals',node);S.goal=node.dataset.v;el('sportBox').classList.toggle('hidden',S.goal!=='sport');save()}function goalNext(){if(!S.goal||(S.goal==='sport'&&!S.sports)){el('e3').style.display='block';return}el('e3').style.display='none';show('config',4)}function configNext(){S.minDays=+S.minDays;S.maxDays=+el('maxDays').value;S.advanced=el('advancedCheck').checked;if(!S.minDays||!S.maxDays||S.maxDays<S.minDays||!S.duration||!S.location){el('e4').style.display='block';return}el('e4').style.display='none';S.advanced?show('advanced',5):finishPlan()}function finishPlan(){S.planCreated=true;save();renderRoadmap();show('roadmap',7)}
-function startPhase(){if(S.goal==='fat')return(['very_thin','thin'].includes(S.physique))?'Recomposición y base muscular':'Pérdida de grasa y acondicionamiento';if(['muscle','bodybuilder'].includes(S.goal))return(['fat','some_fat'].includes(S.physique))?'Acondicionamiento y composición corporal':'Construcción muscular';if(S.goal==='recomp')return'Recomposición';if(S.goal==='athletic')return'Base atlética';if(S.goal==='health')return'Base de condición física';return'Preparación específica para '+sports[S.sports]}
-function phaseNames(){const a=startPhase();if(S.goal==='fat')return[a,'Construcción muscular','Especialización','Objetivo final'];if(S.goal==='muscle')return[a,'Progresión avanzada','Especialización','Objetivo final'];if(S.goal==='bodybuilder')return[a,'Hipertrofia avanzada','Especialización','Objetivo final'];if(S.goal==='recomp')return[a,'Construcción muscular','Especialización','Objetivo final'];if(S.goal==='athletic')return[a,'Fuerza y potencia','Especialización atlética','Objetivo final'];if(S.goal==='health')return[a,'Progresión','Mantenimiento activo','Objetivo final'];return[a,'Desarrollo de capacidades','Especialización deportistas','Objetivo final']}
-function weeks(){return Math.floor((Date.now()-S.startDate)/604800000)}function coachRecommendation(){const p=S.phaseState.index;const w=weeks();let ready=(p<3)&&(S.completed>=24||w>=10);if(S.selfCheck==='worse')ready=false;let text='';if(ready){text='<span class="tag">RECOMENDACIÓN DEL COACH</span><h3 style="margin-top:10px">Creemos que estás preparado para avanzar</h3><p class="muted">Tu historial muestra suficiente trabajo y/o tiempo en la fase para valorar el siguiente paso. Si sigues rechazándolo, volveremos a proponértelo más adelante.</p><button class="btn primary" onclick="acceptPhase()">Pasar a la siguiente fase</button> <button class="btn secondary" onclick="declinePhase()">Todavía no</button>'}else{text='<span class="tag">COACH</span><h3 style="margin-top:10px">Seguimos construyendo</h3><p class="muted">GymPro seguirá buscando progresión. Si detectamos estancamiento o suficiente trabajo acumulado, revisaremos el estímulo y la siguiente fase.</p>'}return{ready,text}}
-function renderRoadmap(){el('rTitle').textContent=labels[S.goal];el('rIntro').textContent='Tu ruta usa objetivo, punto de partida, experiencia, disponibilidad y preferencias. El IMC no decide por sí solo cuándo avanzas.';el('summary').innerHTML=`<div class="stat"><span>Objetivo</span><b>${labels[S.goal]}${S.goal==='sport'?' · '+sports[S.sports]:''}</b></div><div class="stat"><span>Compromiso</span><b>${S.minDays}–${S.maxDays} sesiones por semana</b></div><div class="stat"><span>Punto de partida</span><b>${phys[S.physique]}</b></div><div class="stat"><span>Experiencia</span><b>${exp[S.exp]}</b></div>`;const ps=phaseNames();el('phases').innerHTML=ps.map((p,i)=>`<div class="phase ${i===S.phaseState.index?'current':'locked'}">${i===S.phaseState.index?'<span class="tag">FASE ACTUAL</span>':i===ps.length-1?'<span class="tag">OBJETIVO</span>':''}<h3>${p}</h3><div class="desc">${i===S.phaseState.index?'La ejecutamos ahora. La estructura se mantiene estable mientras buscamos progresión.':i===ps.length-1?'Es el destino final de esta ruta.':'Se desbloqueará cuando GymPro detecte que estás preparado.'}</div></div>${i<ps.length-1?'<div class="arrow">↓</div>':''}`).join('');const r=coachRecommendation();el('coachMsg').className='banner '+(r.ready?'ok':'');el('coachMsg').innerHTML=r.text}
-function acceptPhase(){S.phaseState.index=Math.min(3,S.phaseState.index+1);S.phaseState.declines=0;S.phaseState.lastRecommendation=Date.now();save();renderRoadmap();renderDashboard()}function declinePhase(){S.phaseState.declines++;S.phaseState.lastRecommendation=Date.now();save();renderRoadmap();renderDashboard()}
-function preferred(m){let c=EX.filter(x=>x.m===m);if(!c.length)return null;const pref=S.equipment||[];c.sort((a,b)=>(pref.includes(b.eq)?1:0)-(pref.includes(a.eq)?1:0));return c}
-function sets(){return S.duration<=45?2:S.duration<=90?3:4}function exerciseFor(m){const x=preferred(m);if(!x)return'';const reps=S.goal==='fat'?'8–12':'6–12';return`<div class="exercise"><div class="row"><div><b>${x.name}</b><div class="sets">${sets()} series · ${reps} reps · deja 1–3 reps en reserva</div></div><button class="smallbtn" onclick="openSub('${encodeURIComponent(x.name)}')">Cambiar</button></div><div class="mini" style="margin-top:7px">Progresión: intenta mejorar peso o repeticiones respecto a tu última sesión con buena técnica.</div></div>`}
-function sessionMuscles(i){const plans=[['chest','back','legs','shoulders'],['back','legs','chest','arms'],['legs','chest','back','core'],['shoulders','back','glutes','arms'],['legs','chest','shoulders','core'],['back','legs','arms','chest'],['glutes','legs','back','shoulders']];let p=plans[i%plans.length];const pr=S.priority||[];if(pr.length){p=[...pr,...p.filter(x=>!pr.includes(x))].slice(0,4)}return p}
-function workoutList(){let n=S.maxDays||1,min=S.minDays||1,out='';for(let i=0;i<n;i++){const optional=i>=min;out+=`<div class="workout"><div class="whead"><b>Sesión ${i+1}</b><span class="tag">${optional?'EXTRA':'BASE'}</span></div>${sessionMuscles(i).map(exerciseFor).join('')}<div class="exercise"><label class="mini"><input type="checkbox" class="check" onchange="completeExercise(this)"> Marcar esta sesión como realizada</label></div></div>`}return out}
-function openDashboard(){renderDashboard();show('dashboard',8)}function renderDashboard(){el('dashCoach').innerHTML=coachRecommendation().text;tabNext();tabRoad();tabTrack()}function tab(which,node){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));node.classList.add('active');['next','road','track'].forEach(x=>el('tab-'+x).classList.toggle('hidden',x!==which))}function tabNext(){el('tab-next').innerHTML=`<div class="banner"><span class="tag">SIGUIENTE ENTRENAMIENTO</span><h3 style="margin-top:10px">Sesión ${S.nextSession}</h3><p class="muted">No importa qué día sea. Cuando vuelvas, continúa con la siguiente sesión de la semana.</p></div>${workoutList()}`}function tabRoad(){el('tab-road').innerHTML=phaseNames().map((p,i)=>`<div class="phase ${i===S.phaseState.index?'current':'locked'}"><b>${p}</b><div class="desc">Fase ${i+1}</div></div>`).join('')}
-function tabTrack(){}
-function completeExercise(node) {
-  if(node.checked) {
-    S.completed++;
-    S.nextSession++;
-    save();
-  }
-}
-function resetApp(){localStorage.removeItem(KEY);location.reload()}
-function saveMetrics(){S.metrics.push({date:Date.now(),weight:el('logWeight').value,fat:el('logFat').value});save();renderMetrics()}
-function renderMetrics(){el('metricHistory').innerHTML=S.metrics.map(x=>`<div class="card">Peso: ${x.weight||'-'} kg, Grasa: ${x.fat||'-'}%</div>`).join('')}
-function evaluateCoach(){el('evaluation').innerHTML='<div class="card"><span class="tag">EVALUACIÓN</span><p class="muted">Evaluado con éxito.</p></div>'}
-function openSub(name){el('subModal').classList.add('show')}
-function closeModal(){el('subModal').classList.remove('show')}
+            if (!experiencia || !objetivo) {
+                alert('Selecciona tu experiencia y objetivo.');
+                return;
+            }
 
-// Arreglo definitivo para el teclado en iOS Safari y el rebote del footer
-if (window.visualViewport) {
-  const appContainer = document.querySelector('.app');
-  const footer = document.querySelector('.footer');
-  
-  const adjustViewport = () => {
-    const keyboardOpen = window.visualViewport.height < window.innerHeight * 0.75;
-    
-    // Asignamos el alto visible real de la pantalla
-    appContainer.style.height = `${window.visualViewport.height}px`;
-    
-    // Si el teclado está abierto, ocultamos el footer para que no empuje nada
-    if (footer) {
-      footer.style.display = keyboardOpen ? 'none' : 'block';
-    }
+            if (!minSesiones || !maxSesiones || parseInt(minSesiones) > parseInt(maxSesiones)) {
+                alert('El mínimo no puede ser mayor que el máximo.');
+                return;
+            }
 
-    const activeEl = document.activeElement;
-    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) {
-      setTimeout(() => {
-        activeEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      }, 80);
-    }
-  };
+            const datos = {
+                nombre,
+                edad: parseInt(edad),
+                peso: parseFloat(peso),
+                altura: parseInt(altura),
+                experiencia,
+                objetivo,
+                minSesiones: parseInt(minSesiones),
+                maxSesiones: parseInt(maxSesiones),
+                fecha: new Date().toISOString()
+            };
 
-  window.visualViewport.addEventListener('resize', adjustViewport);
-  window.visualViewport.addEventListener('scroll', adjustViewport);
-}
-</script>
+            // Guardar en LocalStorage
+            localStorage.setItem('gympro_datos', JSON.stringify(datos));
+            
+            alert('¡Datos guardados correctamente! ✅');
+            console.log('Datos guardados:', datos);
+        });
+
+        // ===== CARGAR DATOS GUARDADOS (si existen) =====
+        window.addEventListener('DOMContentLoaded', function() {
+            const datosGuardados = localStorage.getItem('gympro_datos');
+            if (datosGuardados) {
+                try {
+                    const datos = JSON.parse(datosGuardados);
+                    document.getElementById('nombre').value = datos.nombre || '';
+                    document.getElementById('edad').value = datos.edad || '';
+                    document.getElementById('peso').value = datos.peso || '';
+                    document.getElementById('altura').value = datos.altura || '';
+                    document.getElementById('experiencia').value = datos.experiencia || '';
+                    document.getElementById('objetivo').value = datos.objetivo || '';
+                    document.getElementById('min_sesiones').value = datos.minSesiones || '';
+                    document.getElementById('max_sesiones').value = datos.maxSesiones || '';
+                } catch(e) {
+                    console.log('Error al cargar datos:', e);
+                }
+            }
+        });
+
+        // ===== EVITAR ZOOM EN INPUTS (iOS) =====
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            el.style.fontSize = '16px';
+        });
+    </script>
 </body>
 </html>
-
