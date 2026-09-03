@@ -135,21 +135,43 @@ function resetApp(){if(confirm('¿Borrar el perfil y empezar de nuevo?')){localS
 if(S.planCreated){renderRoadmap();renderDashboard();show('dashboard',8)}save();
 </script>
 <script>
-// Arreglo definitivo para el header fijo en iOS con teclado desplegado
+// Arreglo definitivo para el header fijo en iOS con teclado desplegado (MEJORADO)
 if (window.visualViewport) {
     const header = document.querySelector('.top');
-    
-    const adjustHeaderForKeyboard = () => {
-        // Calcula cuánto se ha desplazado el lienzo hacia arriba por el teclado
+    const app = document.querySelector('.app');
+    let lastOffset = 0;
+
+    const adjustHeader = () => {
         const offset = window.visualViewport.offsetTop;
-        // Mueve el header hacia abajo exactamente esa misma distancia para mantenerlo visible
-        header.style.setProperty('--keyboard-offset', `${offset}px`);
+        if (offset !== lastOffset) {
+            header.style.setProperty('--keyboard-offset', `${offset}px`);
+            lastOffset = offset;
+        }
     };
 
-    // Escucha cuando el visor cambia de tamaño o se desplaza (abrir/cerrar teclado)
-    window.visualViewport.addEventListener('resize', adjustHeaderForKeyboard);
-    window.visualViewport.addEventListener('scroll', adjustHeaderForKeyboard);
+    window.visualViewport.addEventListener('resize', adjustHeader);
+    window.visualViewport.addEventListener('scroll', adjustHeader);
+
+    // Cuando pierdes el foco del input (teclado se cierra), reseteamos el header
+    document.addEventListener('focusout', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+            setTimeout(() => {
+                if (window.visualViewport.offsetTop === 0) {
+                    header.style.setProperty('--keyboard-offset', '0px');
+                    lastOffset = 0;
+                }
+            }, 200);
+        }
+    });
+
+    // Si al hacer scroll el header se queda pillado, lo corregimos
+    app.addEventListener('scroll', function() {
+        if (window.visualViewport.offsetTop === 0 && lastOffset !== 0) {
+            header.style.setProperty('--keyboard-offset', '0px');
+            lastOffset = 0;
+        }
+    });
 }
-</script>
+     </script>
 
 </body></html>
