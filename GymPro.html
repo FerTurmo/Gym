@@ -135,7 +135,7 @@ function resetApp(){if(confirm('¿Borrar el perfil y empezar de nuevo?')){localS
 if(S.planCreated){renderRoadmap();renderDashboard();show('dashboard',8)}save();
 </script>
 <script>
-// Arreglo definitivo para el header fijo en iOS con teclado desplegado (VERSIÓN 2 - MÁS CONTUNDENTE)
+// Arreglo definitivo para header en iOS - VERSIÓN CON RESET COMPLETO
 if (window.visualViewport) {
     const header = document.querySelector('.top');
     const app = document.querySelector('.app');
@@ -150,66 +150,83 @@ if (window.visualViewport) {
         }
     };
 
+    // Cuando el teclado está abierto, ajustamos el header
     window.visualViewport.addEventListener('resize', adjustHeader);
     window.visualViewport.addEventListener('scroll', adjustHeader);
 
-    // Detectamos cuándo se abre el teclado (un input recibe foco)
+    // Forzar un reset completo del layout cuando se cierra el teclado
+    const resetLayout = () => {
+        // Resetear el offset del header
+        header.style.setProperty('--keyboard-offset', '0px');
+        lastOffset = 0;
+        keyboardOpen = false;
+        
+        // 🔥 FORZAR REFLOW: esto hace que el navegador recalcule todo el layout
+        void document.body.offsetHeight;
+        
+        // Asegurar que el app tenga el height correcto
+        app.style.height = '100%';
+        app.style.overflowY = 'auto';
+        
+        // Scroll al top para que no quede un espacio fantasma
+        app.scrollTop = 0;
+    };
+
+    // Cuando un input recibe foco (teclado se abre)
     document.addEventListener('focusin', function(e) {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
             keyboardOpen = true;
-            // Forzamos el ajuste inmediato
-            setTimeout(adjustHeader, 50);
         }
     });
 
-    // Detectamos cuándo se cierra el teclado (pierde el foco o se hace scroll)
-    const resetHeader = () => {
-        if (keyboardOpen) {
-            keyboardOpen = false;
-            // Forzamos el reset después de que el teclado se haya cerrado completamente
-            setTimeout(() => {
-                header.style.setProperty('--keyboard-offset', '0px');
-                lastOffset = 0;
-                // Forzamos un reflow para que el navegador lo aplique
-                header.offsetHeight;
-            }, 100);
-        }
-    };
-
-    // Cuando se pierde el foco de un input
+    // Cuando se pierde el foco (teclado se cierra) - Múltiples estrategias
     document.addEventListener('focusout', function(e) {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
-            resetHeader();
+            // Esperamos a que iOS termine de cerrar el teclado
+            setTimeout(resetLayout, 300);
         }
     });
 
-    // También al hacer scroll si el teclado está abierto (por si el usuario cierra el teclado deslizando)
-    app.addEventListener('scroll', function() {
-        if (keyboardOpen) {
-            // Si el offset es 0, el teclado ya no está visible
-            if (window.visualViewport.offsetTop === 0) {
-                resetHeader();
-            }
-        } else if (lastOffset !== 0) {
-            // Si el teclado ya está cerrado pero el header quedó pillado
-            header.style.setProperty('--keyboard-offset', '0px');
-            lastOffset = 0;
-        }
-    });
-
-    // 🔥 NUEVO: también al hacer clic en cualquier lugar fuera del input (para cerrar el teclado con un toque)
+    // Al hacer click fuera del input
     document.addEventListener('click', function(e) {
         if (keyboardOpen && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
-            // Si hacemos clic fuera de un input, el teclado se cierra
-            setTimeout(() => {
-                if (window.visualViewport.offsetTop === 0) {
-                    header.style.setProperty('--keyboard-offset', '0px');
-                    lastOffset = 0;
-                    keyboardOpen = false;
-                }
-            }, 150);
+            setTimeout(resetLayout, 250);
         }
     });
+
+    // Al hacer scroll en el app, si el offset es 0 reseteamos
+    app.addEventListener('scroll', function() {
+        if (window.visualViewport.offsetTop === 0 && lastOffset !== 0) {
+            resetLayout();
+        }
+    });
+
+    // 🔥 NUEVO: también al cambiar de orientación o redimensionar la ventana
+    window.addEventListener('orientationchange', function() {
+        setTimeout(resetLayout, 300);
+    });
+
+    window.addEventListener('resize', function() {
+        if (!keyboardOpen) {
+            setTimeout(resetLayout, 200);
+        }
+    });
+
+    // 🔥 EXTRA: si el teclado se cierra con el botón "OK" del teclado numérico (algunos casos)
+    // Detectamos cambios en el foco activo
+    let lastActive = document.activeElement;
+    setInterval(() => {
+        const current = document.activeElement;
+        if (lastActive !== current) {
+            // Si el elemento activo ya no es un input, reseteamos
+            if (current && current.tagName !== 'INPUT' && current.tagName !== 'TEXTAREA' && current.tagName !== 'SELECT') {
+                if (keyboardOpen) {
+                    setTimeout(resetLayout, 200);
+                }
+            }
+            lastActive = current;
+        }
+    }, 500);
 }
      </script>
 
