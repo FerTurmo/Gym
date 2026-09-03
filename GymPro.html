@@ -233,6 +233,24 @@ function saveMetrics(){const w=parseFloat(el('logWeight').value),f=parseFloat(el
 function resetApp(){if(confirm('¿Borrar el perfil y empezar de nuevo?')){localStorage.removeItem(KEY);location.reload()}}
 if(S.planCreated){renderRoadmap();renderDashboard();show('dashboard',8)}save();
 </script>
+    <script>
+// Arreglo definitivo para el header fijo en iOS con teclado desplegado
+if (window.visualViewport) {
+    const header = document.querySelector('.top');
+    
+    const adjustHeaderForKeyboard = () => {
+        // Calcula cuánto se ha desplazado el lienzo hacia arriba por el teclado
+        const offset = window.visualViewport.offsetTop;
+        // Mueve el header hacia abajo exactamente esa misma distancia para mantenerlo visible
+        header.style.setProperty('--keyboard-offset', `${offset}px`);
+    };
+
+    // Escucha cuando el visor cambia de tamaño o se desplaza (abrir/cerrar teclado)
+    window.visualViewport.addEventListener('resize', adjustHeaderForKeyboard);
+    window.visualViewport.addEventListener('scroll', adjustHeaderForKeyboard);
+}
+</script>
+
 
 
 </body></html>
