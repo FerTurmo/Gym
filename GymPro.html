@@ -21,7 +21,7 @@ html, body {
 .app {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100vh;
     width: 100%;
     max-width: 760px;
     margin: auto;
@@ -163,7 +163,7 @@ h3 { margin:0 0 9px }
     <button class="back" onclick="show('intro',0)">← Volver</button>
     <div class="eyebrow">1 · Conócete</div>
     <h2>Vamos a conocerte un poco</h2>
-    <p class="muted">Solo necesitamos lo esencial para construir tu primer plan.</p>
+    <p class="muted">Solo necesitamos lo essencial para construir tu primer plan.</p>
     <div class="card">
       <div class="field"><label>Edad</label><input id="age" class="input" type="number" min="13" max="100" placeholder="Ej. 32"></div>
       <div class="field"><label>Sexo</label><div class="grid" id="sex"><button class="choice" data-v="male" onclick="pick('sex',this)">Hombre</button><button class="choice" data-v="female" onclick="pick('sex',this)">Mujer</button></div></div>
@@ -195,7 +195,7 @@ h3 { margin:0 0 9px }
     <div class="card choices" id="goals">
       <button class="choice" data-v="muscle" onclick="goalPick(this)">💪 Ganar músculo</button>
       <button class="choice" data-v="fat" onclick="goalPick(this)">🔥 Perder grasa</button>
-        <button class="choice" data-v="recomp" onclick="goalPick(this)">⚖️ Ganar músculo y perder grasa</button>
+              <button class="choice" data-v="recomp" onclick="goalPick(this)">⚖️ Ganar músculo y perder grasa</button>
       <button class="choice" data-v="athletic" onclick="goalPick(this)">🏃 Conseguir un cuerpo atlético</button>
       <button class="choice" data-v="bodybuilder" onclick="goalPick(this)">🏆 Conseguir un físico muy musculado</button>
       <button class="choice" data-v="health" onclick="goalPick(this)">❤️ Mantenerme en forma y saludable</button>
@@ -251,12 +251,11 @@ h3 { margin:0 0 9px }
     <div class="tabs"><button class="tab active" onclick="tab('next',this)">Siguiente</button><button class="tab" onclick="tab('road',this)">Roadmap</button><button class="tab" onclick="tab('track',this)">Progreso</button></div>
     <div id="tab-next"></div><div id="tab-road" class="hidden"></div><div id="tab-track" class="hidden"></div>
   </section>
-
   <section id="tracking" class="screen">
     <button class="back" onclick="openDashboard()">← Volver</button>
     <div class="eyebrow">Seguimiento</div>
     <h2>Tu progreso</h2><p class="muted">No necesitas registrar todo. GymPro trabajará con lo que tengas.</p>
-          <div class="card"><div class="metric"><div><label class="mini">Peso actual (opcional)</label><input id="logWeight" class="input" type="number" step="0.1" placeholder="kg"></div><div><label class="mini">% grasa (opcional)</label><input id="logFat" class="input" type="number" step="0.1" min="1" max="70" placeholder="%"></div></div><div class="actions"><button class="btn primary" onclick="saveMetrics()">Guardar</button></div></div>
+    <div class="card"><div class="metric"><div><label class="mini">Peso actual (opcional)</label><input id="logWeight" class="input" type="number" step="0.1" placeholder="kg"></div><div><label class="mini">% grasa (opcional)</label><input id="logFat" class="input" type="number" step="0.1" min="1" max="70" placeholder="%"></div></div><div class="actions"><button class="btn primary" onclick="saveMetrics()">Guardar</button></div></div>
     <div id="metricHistory"></div>
     <div class="card"><h3>¿Cómo sientes tu progreso?</h3><div class="grid" id="selfCheck"><button class="choice" data-v="worse" onclick="pick('selfCheck',this)">🔴 Voy peor</button><button class="choice" data-v="same" onclick="pick('selfCheck',this)">🟡 Igual</button><button class="choice" data-v="better" onclick="pick('selfCheck',this)">🟢 Voy mejor</button></div><div class="actions"><button class="btn primary" onclick="evaluateCoach()">Evaluar mi fase</button></div></div>
     <div id="evaluation"></div>
@@ -298,7 +297,7 @@ function weeks(){return Math.floor((Date.now()-S.startDate)/604800000)}function 
 function renderRoadmap(){el('rTitle').textContent=labels[S.goal];el('rIntro').textContent='Tu ruta usa objetivo, punto de partida, experiencia, disponibilidad y preferencias. El IMC no decide por sí solo cuándo avanzas.';el('summary').innerHTML=`<div class="stat"><span>Objetivo</span><b>${labels[S.goal]}${S.goal==='sport'?' · '+sports[S.sports]:''}</b></div><div class="stat"><span>Compromiso</span><b>${S.minDays}–${S.maxDays} sesiones por semana</b></div><div class="stat"><span>Punto de partida</span><b>${phys[S.physique]}</b></div><div class="stat"><span>Experiencia</span><b>${exp[S.exp]}</b></div>`;const ps=phaseNames();el('phases').innerHTML=ps.map((p,i)=>`<div class="phase ${i===S.phaseState.index?'current':'locked'}">${i===S.phaseState.index?'<span class="tag">FASE ACTUAL</span>':i===ps.length-1?'<span class="tag">OBJETIVO</span>':''}<h3>${p}</h3><div class="desc">${i===S.phaseState.index?'La ejecutamos ahora. La estructura se mantiene estable mientras buscamos progresión.':i===ps.length-1?'Es el destino final de esta ruta.':'Se desbloqueará cuando GymPro detecte que estás preparado.'}</div></div>${i<ps.length-1?'<div class="arrow">↓</div>':''}`).join('');const r=coachRecommendation();el('coachMsg').className='banner '+(r.ready?'ok':'');el('coachMsg').innerHTML=r.text}
 function acceptPhase(){S.phaseState.index=Math.min(3,S.phaseState.index+1);S.phaseState.declines=0;S.phaseState.lastRecommendation=Date.now();save();renderRoadmap();renderDashboard()}function declinePhase(){S.phaseState.declines++;S.phaseState.lastRecommendation=Date.now();save();renderRoadmap();renderDashboard()}
 function preferred(m){let c=EX.filter(x=>x.m===m);if(!c.length)return null;const pref=S.equipment||[];c.sort((a,b)=>(pref.includes(b.eq)?1:0)-(pref.includes(a.eq)?1:0));return c}
-    function sets(){return S.duration<=45?2:S.duration<=90?3:4}function exerciseFor(m){const x=preferred(m);if(!x)return'';const reps=S.goal==='fat'?'8–12':'6–12';return`<div class="exercise"><div class="row"><div><b>${x.name}</b><div class="sets">${sets()} series · ${reps} reps · deja 1–3 reps en reserva</div></div><button class="smallbtn" onclick="openSub('${encodeURIComponent(x.name)}')">Cambiar</button></div><div class="mini" style="margin-top:7px">Progresión: intenta mejorar peso o repeticiones respecto a tu última sesión con buena técnica.</div></div>`}
+function sets(){return S.duration<=45?2:S.duration<=90?3:4}function exerciseFor(m){const x=preferred(m);if(!x)return'';const reps=S.goal==='fat'?'8–12':'6–12';return`<div class="exercise"><div class="row"><div><b>${x.name}</b><div class="sets">${sets()} series · ${reps} reps · deja 1–3 reps en reserva</div></div><button class="smallbtn" onclick="openSub('${encodeURIComponent(x.name)}')">Cambiar</button></div><div class="mini" style="margin-top:7px">Progresión: intenta mejorar peso o repeticiones respecto a tu última sesión con buena técnica.</div></div>`}
 function sessionMuscles(i){const plans=[['chest','back','legs','shoulders'],['back','legs','chest','arms'],['legs','chest','back','core'],['shoulders','back','glutes','arms'],['legs','chest','shoulders','core'],['back','legs','arms','chest'],['glutes','legs','back','shoulders']];let p=plans[i%plans.length];const pr=S.priority||[];if(pr.length){p=[...pr,...p.filter(x=>!pr.includes(x))].slice(0,4)}return p}
 function workoutList(){let n=S.maxDays||1,min=S.minDays||1,out='';for(let i=0;i<n;i++){const optional=i>=min;out+=`<div class="workout"><div class="whead"><b>Sesión ${i+1}</b><span class="tag">${optional?'EXTRA':'BASE'}</span></div>${sessionMuscles(i).map(exerciseFor).join('')}<div class="exercise"><label class="mini"><input type="checkbox" class="check" onchange="completeExercise(this)"> Marcar esta sesión como realizada</label></div></div>`}return out}
 function openDashboard(){renderDashboard();show('dashboard',8)}function renderDashboard(){el('dashCoach').innerHTML=coachRecommendation().text;tabNext();tabRoad();tabTrack()}function tab(which,node){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));node.classList.add('active');['next','road','track'].forEach(x=>el('tab-'+x).classList.toggle('hidden',x!==which))}function tabNext(){el('tab-next').innerHTML=`<div class="banner"><span class="tag">SIGUIENTE ENTRENAMIENTO</span><h3 style="margin-top:10px">Sesión ${S.nextSession}</h3><p class="muted">No importa qué día sea. Cuando vuelvas, continúa con la siguiente sesión de la semana.</p></div>${workoutList()}`}function tabRoad(){el('tab-road').innerHTML=phaseNames().map((p,i)=>`<div class="phase ${i===S.phaseState.index?'current':'locked'}"><b>${p}</b><div class="desc">Fase ${i+1}</div></div>`).join('')}
@@ -316,9 +315,22 @@ function renderMetrics(){el('metricHistory').innerHTML=S.metrics.map(x=>`<div cl
 function evaluateCoach(){el('evaluation').innerHTML='<div class="card"><span class="tag">EVALUACIÓN</span><p class="muted">Evaluado con éxito.</p></div>'}
 function openSub(name){el('subModal').classList.add('show')}
 function closeModal(){el('subModal').classList.remove('show')}
+
+if (window.visualViewport) {
+  const appContainer = document.querySelector('.app');
+  const adjustViewport = () => {
+    appContainer.style.height = `${window.visualViewport.height}px`;
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) {
+      setTimeout(() => {
+        activeEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }, 80);
+    }
+  };
+  window.visualViewport.addEventListener('resize', adjustViewport);
+  window.visualViewport.addEventListener('scroll', adjustViewport);
+}
 </script>
 </body>
 </html>
-
-
 
