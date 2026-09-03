@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Troya Gym Tracker</title>
+
+<style>
+:root{
+  --bg:#0f1115;
+  --card:#181b21;
+  --card2:#20242c;
+  --border:#303641;
+  --text:#f2f4f7;
+  --muted:#9aa3af;
+  --accent:#e0b15a;
+  --green:#4ade80;
+  --red:#f87171;
+  --blue:#60a5fa;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+.container{
+  max-width:1050px;
+  margin:auto;
+  padding:20px;
+}
+
+header{
+  margin-bottom:20px;
+}
+
+h1{
+  margin:0 0 5px;
+  font-size:28px;
+}
+
+h2{
+  margin-top:0;
+}
+
+h3{
+  margin-top:0;
+}
+
+.subtitle{
+  color:var(--muted);
+  font-size:14px;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  margin-bottom:20px;
+  padding-bottom:4px;
+}
+
+.tab{
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--muted);
+  padding:11px 15px;
+  border-radius:10px;
+  cursor:pointer;
+  white-space:nowrap;
+  font-size:13px;
+}
+
+.tab.active{
+  background:var(--accent);
+  color:#111;
+  border-color:var(--accent);
+  font-weight:bold;
+}
+
+.tab.optional{
+  border-style:dashed;
+}
+
+.day{
+  display:none;
+}
+
+.day.active{
+  display:block;
+}
+
+.day-type{
+  display:inline-block;
+  padding:5px 8px;
+  border-radius:6px;
+  font-size:11px;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+
+.mandatory{
+  background:#302717;
+  color:var(--accent);
+}
+
+.optional{
+  background:#17253a;
+  color:var(--blue);
+}
+
+.exercise{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  margin-bottom:14px;
+  overflow:hidden;
+}
+
+.exercise-header{
+  padding:16px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  background:var(--card2);
+}
+
+.exercise-name{
+  font-weight:bold;
+  font-size:16px;
+}
+
+.target{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+
+.previous{
+  font-size:12px;
+  color:var(--muted);
+  text-align:right;
+}
+
+.series{
+  padding:12px 16px 4px;
+}
+
+.series-labels{
+  display:grid;
+  grid-template-columns:40px 1fr 1fr 40px;
+  gap:8px;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:10px;
+  text-transform:uppercase;
+}
+
+.series-row{
+  display:grid;
+  grid-template-columns:40px 1fr 1fr 40px;
+  gap:8px;
+  align-items:center;
+  margin-bottom:8px;
+}
+
+.series-number{
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+}
+
+input{
+  width:100%;
+  background:#111318;
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:white;
+  padding:10px;
+  font-size:14px;
+}
+
+input:focus{
+  outline:none;
+  border-color:var(--accent);
+}
+
+.delete-series{
+  border:0;
+  background:transparent;
+  color:var(--red);
+  font-size:20px;
+  cursor:pointer;
+  padding:5px;
+}
+
+.add-series{
+  margin:8px 16px 16px;
+  width:calc(100% - 32px);
+  padding:10px;
+  border:1px dashed var(--border);
+  background:transparent;
+  color:var(--accent);
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.add-series:hover{
+  background:var(--card2);
+}
+
+.exercise-footer{
+  padding:0 16px 14px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+button{
+  border:0;
+  border-radius:9px;
+  padding:11px 15px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.primary{
+  background:var(--accent);
+  color:#111;
+}
+
+.secondary{
+  background:var(--card2);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+
+.danger{
+  background:#351c1c;
+  color:var(--red);
+  border:1px solid #633030;
+}
+
+.message{
+  display:none;
+  background:#17351f;
+  color:var(--green);
+  padding:12px;
+  border-radius:9px;
+  margin-bottom:15px;
+}
+
+.summary{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:20px;
+}
+
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+.stat{
+  background:var(--card2);
+  padding:14px;
+  border-radius:10px;
+}
+
+.stat-label{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:5px;
+}
+
+.stat-value{
+  font-size:18px;
+  font-weight:bold;
+}
+
+.history{
+  margin-top:25px;
+}
+
+.history-item{
+  background:var(--card);
+  border:1px solid var(--border);
+  padding:14px;
+  border-radius:10px;
+  margin-bottom:8px;
+}
+
+.history-date{
+  font-weight:bold;
+}
+
+.history-info{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:5px;
+}
+
+.exercise-history{
+  margin-top:20px;
+}
+
+select{
+  background:var(--card2);
+  color:white;
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px;
+  width:100%;
+  margin-bottom:15px;
+}
+
+canvas{
+  width:100%;
+  max-height:300px;
+  background:var(--card);
+  border-radius:12px;
+  border:1px solid var(--border);
+}
+
+.cardio-note{
+  background:var(--card);
+  border:1px solid var(--border);
+  padding:16px;
+  border-radius:14px;
+  margin-bottom:14px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+@media(max-width:600px){
+
+  .container{
+    padding:12px;
+  }
+
+  .summary-grid{
+    grid-template-columns:1fr;
+  }
+
+  .exercise-header{
+    align-items:flex-start;
+  }
+
+  .previous{
+    max-width:130px;
+  }
+
+  .series-row{
+    grid-template-columns:30px 1fr 1fr 30px;
+  }
+
+  .series-labels{
+    grid-template-columns:30px 1fr 1fr 30px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h1>🏛️ Troya Gym</h1>
+  <div class="subtitle">
+    Entrenamiento · Progresión · Físico atlético
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showDay(1)">
+    1 · Push
+  </button>
+
+  <button class="tab" onclick="showDay(2)">
+    2 · Pull
+  </button>
+
+  <button class="tab" onclick="showDay(3)">
+    3 · Legs
+  </button>
+
+  <button class="tab" onclick="showDay(4)">
+    4 · Upper
+  </button>
+
+  <button class="tab optional" onclick="showDay(5)">
+    5 · Hombros + brazos
+  </button>
+
+  <button class="tab optional" onclick="showDay(6)">
+    6 · Espalda + pecho
+  </button>
+
+  <button class="tab optional" onclick="showDay(7)">
+    7 · Athletic
+  </button>
+</div>
+
+<div id="message" class="message"></div>
+
+<div class="controls">
+
+  <button class="primary" onclick="saveWorkout()">
+    💾 Guardar entrenamiento
+  </button>
+
+  <button class="secondary" onclick="resetCurrentWorkout()">
+    ↩️ Restaurar
+  </button>
+
+  <button class="secondary" onclick="exportData()">
+    📤 Exportar
+  </button>
+
+  <button class="secondary" onclick="document.getElementById('importFile').click()">
+    📥 Importar
+  </button>
+
+  <button class="danger" onclick="deleteAllData()">
+    🗑️ Borrar datos
+  </button>
+
+  <input
+    type="file"
+    id="importFile"
+    accept=".json"
+    style="display:none"
+    onchange="importData(event)"
+  >
+
+</div>
+
+<div id="days"></div>
+
+<div class="summary">
+
+  <h3>📊 Resumen</h3>
+
+  <div class="summary-grid">
+
+    <div class="stat">
+      <div class="stat-label">Sesiones totales</div>
+      <div class="stat-value" id="totalWorkouts">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Volumen última sesión</div>
+      <div class="stat-value" id="lastVolume">0 kg</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Comparación</div>
+      <div class="stat-value" id="comparison">—</div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="exercise-history">
+
+  <h3>📈 Progreso por ejercicio</h3>
+
+  <select
+    id="exerciseSelector"
+    onchange="drawChart()"
+  >
+    <option value="">
+      Selecciona un ejercicio
+    </option>
+  </select>
+
+  <canvas
+    id="progressChart"
+    width="900"
+    height="300">
+  </canvas>
+
+</div>
+
+<div class="history">
+
+  <h3>📋 Historial</h3>
+
+  <div id="historyList"></div>
+
+</div>
+
+</div>
+
+<script>
+
+/* =========================================================
+   CONFIGURACIÓN
+========================================================= */
+
+const STORAGE_KEY = "troyaGymData";
+
+const routine = {
+
+  1:{
+    name:"Pecho + hombros + tríceps",
+    type:"mandatory",
+    exercises:[
+      ["Press de pecho en máquina",3,"6-10"],
+      ["Press inclinado en máquina",3,"8-12"],
+      ["Pec Deck",2,"10-15"],
+      ["Elevación lateral en máquina",4,"10-15"],
+      ["Press de hombros en máquina",2,"8-12"],
+      ["Tríceps en polea",3,"10-15"],
+      ["Extensión de tríceps en máquina/polea",2,"10-15"]
+    ]
+  },
+
+  2:{
+    name:"Espalda + bíceps + abdomen",
+    type:"mandatory",
+    exercises:[
+      ["Jalón al pecho en máquina/polea",3,"8-12"],
+      ["Remo sentado en máquina",3,"8-12"],
+      ["Jalón unilateral en máquina/polea",2,"10-15"],
+      ["Reverse Pec Deck",3,"12-15"],
+      ["Curl de bíceps en máquina",3,"8-12"],
+      ["Curl predicador en máquina",2,"10-15"],
+      ["Crunch abdominal en máquina",3,"10-15"],
+      ["Elevación de piernas",2,"10-15"]
+    ]
+  },
+
+  3:{
+    name:"Piernas + abdomen",
+    type:"mandatory",
+    exercises:[
+      ["Prensa de piernas",3,"8-12"],
+      ["Curl femoral sentado",3,"8-12"],
+      ["Extensión de cuádriceps",2,"10-15"],
+      ["Hip Thrust en máquina",2,"8-12"],
+      ["Gemelos en máquina",3,"10-15"],
+      ["Crunch en máquina",3,"10-15"],
+      ["Abdominal lateral en máquina/polea",2,"12-15"]
+    ]
+  },
+
+  4:{
+    name:"Upper estético",
+    type:"mandatory",
+    exercises:[
+      ["Press inclinado en máquina",3,"8-12"],
+      ["Pec Deck",2,"10-15"],
+      ["Jalón al pecho",3,"8-12"],
+      ["Remo en máquina",2,"8-12"],
+      ["Elevación lateral en máquina",4,"10-15"],
+      ["Reverse Pec Deck",2,"12-15"],
+      ["Curl bíceps máquina",2,"10-15"],
+      ["Tríceps polea",2,"10-15"]
+    ]
+  },
+
+  5:{
+    name:"Hombros + brazos",
+    type:"optional",
+    exercises:[
+      ["Elevación lateral máquina",4,"10-15"],
+      ["Reverse Pec Deck",3,"12-15"],
+      ["Press hombros máquina",2,"8-12"],
+      ["Curl bíceps máquina",3,"8-12"],
+      ["Curl predicador",2,"10-15"],
+      ["Tríceps polea",3,"10-15"],
+      ["Extensión tríceps",2,"10-15"]
+    ]
+  },
+
+  6:{
+    name:"Espalda + pecho",
+    type:"optional",
+    exercises:[
+      ["Jalón al pecho",3,"8-12"],
+      ["Remo máquina",3,"8-12"],
+      ["Jalón unilateral",2,"10-15"],
+      ["Reverse Pec Deck",2,"12-15"],
+      ["Press inclinado máquina",3,"8-12"],
+      ["Press pecho máquina",2,"8-12"],
+      ["Pec Deck",2,"10-15"]
+    ]
+  },
+
+  7:{
+    name:"Athletic",
+    type:"optional",
+    exercises:[
+      ["Prensa de piernas",2,"10-15"],
+      ["Curl femoral",2,"10-15"],
+      ["Extensión de cuádriceps",2,"10-15"],
+      ["Gemelos",2,"12-15"],
+      ["Crunch máquina",3,"10-15"],
+      ["Elevación de piernas",2,"10-15"]
+    ]
+  }
+
+};
+
+
+/* =========================================================
+   ESTADO
+========================================================= */
+
+let data = JSON.parse(
+  localStorage.getItem(STORAGE_KEY) ||
+  '{"workouts":[]}'
+);
+
+let currentDay = 1;
+
+
+/* =========================================================
+   STORAGE
+========================================================= */
+
+function saveData(){
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(data)
+  );
+
+}
+
+
+/* =========================================================
+   MENSAJES
+========================================================= */
+
+function showMessage(text){
+
+  const el =
+    document.getElementById("message");
+
+  el.textContent = text;
+
+  el.style.display = "block";
+
+  setTimeout(()=>{
+    el.style.display = "none";
+  },2500);
+
+}
+
+
+/* =========================================================
+   ESCAPAR HTML
+========================================================= */
+
+function escapeHTML(str){
+
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+
+}
+
+
+/* =========================================================
+   RENDERIZAR DÍAS
+========================================================= */
+
+function renderDays(){
+
+  const container =
+    document.getElementById("days");
+
+  container.innerHTML = "";
+
+  for(let day=1; day<=7; day++){
+
+    const dayDiv =
+      document.createElement("div");
+
+    dayDiv.className =
+      "day " +
+      (day===1 ? "active" : "");
+
+    dayDiv.id =
+      "day-"+day;
+
+    const isMandatory =
+      routine[day].type === "mandatory";
+
+    let html = `
+
+      <div class="summary">
+
+        <div class="day-type ${
+          isMandatory
+          ? "mandatory"
+          : "optional"
+        }">
+
+          ${
+            isMandatory
+            ? "🔴 OBLIGATORIO"
+            : "🟡 OPCIONAL"
+          }
+
+        </div>
+
+        <h2>
+          Día ${day} — ${routine[day].name}
+        </h2>
+
+        <div class="subtitle">
+          ${
+            isMandatory
+            ? "Este día forma parte de tus 4 días base."
+            : "Haz este día únicamente si esta semana entrenas más de 4 días."
+          }
+        </div>
+
+      </div>
+    `;
+
+    routine[day].exercises.forEach(
+      (exercise,index)=>{
+
+        html += createExerciseHTML(
+          day,
+          index,
+          exercise[0],
+          exercise[1],
+          exercise[2]
+        );
+
+      }
+    );
+
+    if(day===7){
+
+      html += `
+
+        <div class="cardio-note">
+
+          <strong>🏃 Cardio recomendado</strong><br><br>
+
+          20–30 minutos de cardio moderado.
+          Bicicleta, cinta inclinada, elíptica,
+          caminar rápido, etc.
+
+          <br><br>
+
+          Este día debe sentirse más ligero que
+          los días principales. No es necesario
+          entrenar al fallo.
+
+        </div>
+
+      `;
+
+    }
+
+    dayDiv.innerHTML = html;
+
+    container.appendChild(dayDiv);
+
+  }
+
+  loadPreviousValues();
+
+}
+
+
+/* =========================================================
+   HTML DE EJERCICIO
+========================================================= */
+
+function createExerciseHTML(
+  day,
+  index,
+  name,
+  defaultSets,
+  reps
+){
+
+  return `
+
+    <div
+      class="exercise"
+      id="exercise-${day}-${index}"
+    >
+
+      <div class="exercise-header">
+
+        <div>
+
+          <div class="exercise-name">
+            ${escapeHTML(name)}
+          </div>
+
+          <div class="target">
+            Objetivo:
+            ${defaultSets} × ${reps}
+          </div>
+
+        </div>
+
+        <div
+          class="previous"
+          id="previous-${day}-${index}"
+        >
+          Sin registro
+        </div>
+
+      </div>
+
+
+      <div
+        class="series"
+        id="series-${day}-${index}"
+      >
+      </div>
+
+
+      <button
+        class="add-series"
+        onclick="addSeries(${day},${index})"
+      >
+        ＋ Añadir serie
+      </button>
+
+
+      <div
+        class="exercise-footer"
+        id="volume-${day}-${index}"
+      >
+        Volumen: 0 kg
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   CREAR SERIE
+========================================================= */
+
+function createSeriesRow(
+  day,
+  exercise,
+  setNumber,
+  weight="",
+  reps=""
+){
+
+  const row =
+    document.createElement("div");
+
+  row.className =
+    "series-row";
+
+  row.innerHTML = `
+
+    <div class="series-number">
+      ${setNumber}
+    </div>
+
+    <input
+      type="number"
+      min="0"
+      step="0.5"
+      placeholder="Peso kg"
+      value="${weight}"
+      class="weight-input"
+      oninput="
+        updateExerciseVolume(
+          ${day},
+          ${exercise}
+        )
+      "
+    >
+
+    <input
+      type="number"
+      min="0"
+      step="1"
+      placeholder="Reps"
+      value="${reps}"
+      class="reps-input"
+      oninput="
+        updateExerciseVolume(
+          ${day},
+          ${exercise}
+        )
+      "
+    >
+
+    <button
+      class="delete-series"
+      onclick="
+        deleteSeries(
+          this,
+          ${day},
+          ${exercise}
+        )
+      "
+      title="Eliminar serie"
+    >
+      ×
+    </button>
+
+  `;
+
+  return row;
+
+}
+
+
+/* =========================================================
+   AÑADIR SERIE
+========================================================= */
+
+function addSeries(day,exercise){
+
+  const container =
+    document.getElementById(
+      `series-${day}-${exercise}`
+    );
+
+  const number =
+    container.children.length + 1;
+
+  container.appendChild(
+    createSeriesRow(
+      day,
+      exercise,
+      number
+    )
+  );
+
+  renumberSeries(
+    day,
+    exercise
+  );
+
+}
+
+
+/* =========================================================
+   ELIMINAR SERIE
+========================================================= */
+
+function deleteSeries(
+  button,
+  day,
+  exercise
+){
+
+  const container =
+    document.getElementById(
+      `series-${day}-${exercise}`
+    );
+
+  if(container.children.length <= 1){
+
+    showMessage(
+      "Cada ejercicio debe tener al menos una serie."
+    );
+
+    return;
+  }
+
+  button.parentElement.remove();
+
+  renumberSeries(
+    day,
+    exercise
+  );
+
+  updateExerciseVolume(
+    day,
+    exercise
+  );
+
+}
+
+
+/* =========================================================
+   RENOMBRAR SERIES
+========================================================= */
+
+function renumberSeries(
+  day,
+  exercise
+){
+
+  const container =
+    document.getElementById(
+      `series-${day}-${exercise}`
+    );
+
+  [...container.children]
+    .forEach((row,index)=>{
+
+      row.querySelector(
+        ".series-number"
+      ).textContent = index + 1;
+
+    });
+
+}
+
+
+/* =========================================================
+   VOLUMEN
+========================================================= */
+
+function updateExerciseVolume(
+  day,
+  exercise
+){
+
+  const container =
+    document.getElementById(
+      `series-${day}-${exercise}`
+    );
+
+  let volume = 0;
+
+  [...container.children]
+    .forEach(row=>{
+
+      const weight =
+        parseFloat(
+          row.querySelector(
+            ".weight-input"
+          ).value
+        ) || 0;
+
+      const reps =
+        parseFloat(
+          row.querySelector(
+            ".reps-input"
+          ).value
+        ) || 0;
+
+      volume += weight * reps;
+
+    });
+
+  document.getElementById(
+    `volume-${day}-${exercise}`
+  ).textContent =
+    `Volumen: ${formatNumber(volume)} kg`;
+
+}
+
+
+/* =========================================================
+   MOSTRAR DÍA
+========================================================= */
+
+function showDay(day){
+
+  currentDay = day;
+
+  document.querySelectorAll(".day")
+    .forEach(el=>{
+      el.classList.remove("active");
+    });
+
+  document.getElementById(
+    "day-"+day
+  ).classList.add("active");
+
+  document.querySelectorAll(".tab")
+    .forEach((tab,index)=>{
+
+      tab.classList.toggle(
+        "active",
+        index+1 === day
+      );
+
+    });
+
+}
+
+
+/* =========================================================
+   ÚLTIMO ENTRENAMIENTO DEL DÍA
+========================================================= */
+
+function getLastWorkout(day){
+
+  const workouts =
+    data.workouts
+      .filter(w=>w.day===day)
+      .sort(
+        (a,b)=>
+          new Date(b.date) -
+          new Date(a.date)
+      );
+
+  return workouts[0] || null;
+
+}
+
+
+/* =========================================================
+   CARGAR DATOS ANTERIORES
+========================================================= */
+
+function loadPreviousValues(){
+
+  for(let day=1; day<=7; day++){
+
+    const last =
+      getLastWorkout(day);
+
+    routine[day].exercises
+      .forEach((exercise,index)=>{
+
+        const container =
+          document.getElementById(
+            `series-${day}-${index}`
+          );
+
+        if(!container) return;
+
+        container.innerHTML = "";
+
+        const previousExercise =
+          last &&
+          last.exercises &&
+          last.exercises[index];
+
+        let sets;
+
+        if(
+          previousExercise &&
+          Array.isArray(
+            previousExercise.sets
+          )
+        ){
+
+          sets =
+            previousExercise.sets;
+
+        }else{
+
+          sets =
+            Array(exercise[1])
+              .fill(null)
+              .map(()=>({
+                weight:"",
+                reps:""
+              }));
+
+        }
+
+        sets.forEach((set,i)=>{
+
+          container.appendChild(
+            createSeriesRow(
+              day,
+              index,
+              i+1,
+              set.weight ?? "",
+              set.reps ?? ""
+            )
+          );
+
+        });
+
+        const previous =
+          document.getElementById(
+            `previous-${day}-${index}`
+          );
+
+        if(previousExercise){
+
+          const volume =
+            calculateExerciseVolume(
+              previousExercise
+            );
+
+          previous.textContent =
+            `Anterior: ${formatNumber(volume)} kg`;
+
+        }else{
+
+          previous.textContent =
+            "Sin registro";
+
+        }
+
+        updateExerciseVolume(
+          day,
+          index
+        );
+
+      });
+
+  }
+
+}
+
+
+/* =========================================================
+   RECOGER DATOS
+========================================================= */
+
+function collectDay(day){
+
+  const exercises = [];
+
+  routine[day].exercises
+    .forEach((exercise,index)=>{
+
+      const container =
+        document.getElementById(
+          `series-${day}-${index}`
+        );
+
+      const sets = [];
+
+      [...container.children]
+        .forEach(row=>{
+
+          const weight =
+            row.querySelector(
+              ".weight-input"
+            ).value;
+
+          const reps =
+            row.querySelector(
+              ".reps-input"
+            ).value;
+
+          sets.push({
+            weight:weight,
+            reps:reps
+          });
+
+        });
+
+      exercises.push({
+        name:exercise[0],
+        sets:sets
+      });
+
+    });
+
+  return exercises;
+
+}
+
+
+/* =========================================================
+   GUARDAR ENTRENAMIENTO
+========================================================= */
+
+function saveWorkout(){
+
+  const exercises =
+    collectDay(currentDay);
+
+  const hasData =
+    exercises.some(exercise =>
+      exercise.sets.some(
+        set =>
+          set.weight !== "" ||
+          set.reps !== ""
+      )
+    );
+
+  if(!hasData){
+
+    showMessage(
+      "Introduce al menos una serie antes de guardar."
+    );
+
+    return;
+  }
+
+  const workout = {
+
+    id:Date.now(),
+
+    date:
+      new Date().toISOString(),
+
+    day:currentDay,
+
+    exercises:exercises
+
+  };
+
+  data.workouts.push(
+    workout
+  );
+
+  saveData();
+
+  updateSummary();
+
+  updateHistory();
+
+  populateExerciseSelector();
+
+  showMessage(
+    "✅ Entrenamiento guardado correctamente."
+  );
+
+}
+
+
+/* =========================================================
+   CÁLCULOS
+========================================================= */
+
+function calculateExerciseVolume(
+  exercise
+){
+
+  if(
+    !exercise ||
+    !Array.isArray(exercise.sets)
+  ){
+    return 0;
+  }
+
+  return exercise.sets.reduce(
+    (total,set)=>{
+
+      const weight =
+        parseFloat(
+          set.weight
+        ) || 0;
+
+      const reps =
+        parseFloat(
+          set.reps
+        ) || 0;
+
+      return total +
+        weight * reps;
+
+    },
+    0
+  );
+
+}
+
+
+function calculateWorkoutVolume(
+  workout
+){
+
+  return workout.exercises.reduce(
+    (total,exercise)=>
+      total +
+      calculateExerciseVolume(
+        exercise
+      ),
+    0
+  );
+
+}
+
+
+function formatNumber(number){
+
+  return Number(number || 0)
+    .toLocaleString(
+      "es-ES",
+      {
+        maximumFractionDigits:1
+      }
+    );
+
+}
+
+
+/* =========================================================
+   RESUMEN
+========================================================= */
+
+function updateSummary(){
+
+  const workouts =
+    [...data.workouts]
+      .sort(
+        (a,b)=>
+          new Date(b.date) -
+          new Date(a.date)
+      );
+
+  document.getElementById(
+    "totalWorkouts"
+  ).textContent =
+    workouts.length;
+
+  if(!workouts.length){
+
+    document.getElementById(
+      "lastVolume"
+    ).textContent =
+      "0 kg";
+
+    document.getElementById(
+      "comparison"
+    ).textContent =
+      "—";
+
+    return;
+  }
+
+  const latest =
+    workouts[0];
+
+  const latestVolume =
+    calculateWorkoutVolume(
+      latest
+    );
+
+  document.getElementById(
+    "lastVolume"
+  ).textContent =
+    formatNumber(
+      latestVolume
+    ) + " kg";
+
+  const previous =
+    workouts.find(
+      w =>
+        w.day === latest.day &&
+        w.id !== latest.id
+    );
+
+  if(!previous){
+
+    document.getElementById(
+      "comparison"
+    ).textContent =
+      "Primera sesión";
+
+    return;
+  }
+
+  const previousVolume =
+    calculateWorkoutVolume(
+      previous
+    );
+
+  if(previousVolume === 0){
+
+    document.getElementById(
+      "comparison"
+    ).textContent =
+      "—";
+
+    return;
+  }
+
+  const percentage =
+    (
+      (latestVolume -
+       previousVolume) /
+       previousVolume
+    ) * 100;
+
+  const sign =
+    percentage >= 0
+    ? "+"
+    : "";
+
+  document.getElementById(
+    "comparison"
+  ).textContent =
+    sign +
+    percentage.toFixed(1) +
+    "%";
+
+}
+
+
+/* =========================================================
+   RESTAURAR
+========================================================= */
+
+function resetCurrentWorkout(){
+
+  if(
+    !confirm(
+      "¿Restaurar las series de la última sesión de este día?"
+    )
+  ){
+    return;
+  }
+
+  loadPreviousValues();
+
+  showMessage(
+    "Sesión restaurada."
+  );
+
+}
+
+
+/* =========================================================
+   HISTORIAL
+========================================================= */
+
+function updateHistory(){
+
+  const container =
+    document.getElementById(
+      "historyList"
+    );
+
+  const workouts =
+    [...data.workouts]
+      .sort(
+        (a,b)=>
+          new Date(b.date) -
+          new Date(a.date)
+      );
+
+  if(!workouts.length){
+
+    container.innerHTML = `
+
+      <div class="history-item">
+        Todavía no tienes entrenamientos guardados.
+      </div>
+
+    `;
+
+    return;
+  }
+
+  container.innerHTML = "";
+
+  workouts.forEach(workout=>{
+
+    const date =
+      new Date(workout.date)
+        .toLocaleString(
+          "es-ES",
+          {
+            dateStyle:"medium",
+            timeStyle:"short"
+          }
+        );
+
+    const volume =
+      calculateWorkoutVolume(
+        workout
+      );
+
+    const item =
+      document.createElement(
+        "div"
+      );
+
+    item.className =
+      "history-item";
+
+    item.innerHTML = `
+
+      <div class="history-date">
+
+        Día ${workout.day} —
+        ${routine[workout.day].name}
+
+      </div>
+
+      <div class="history-info">
+
+        ${date}
+        · ${formatNumber(volume)} kg
+        de volumen
+
+      </div>
+
+    `;
+
+    container.appendChild(
+      item
+    );
+
+  });
+
+}
+
+
+/* =========================================================
+   SELECTOR DE EJERCICIOS
+========================================================= */
+
+function populateExerciseSelector(){
+
+  const selector =
+    document.getElementById(
+      "exerciseSelector"
+    );
+
+  const current =
+    selector.value;
+
+  selector.innerHTML = `
+
+    <option value="">
+      Selecciona un ejercicio
+    </option>
+
+  `;
+
+  const names = [];
+
+  Object.values(routine)
+    .forEach(day=>{
+
+      day.exercises
+        .forEach(exercise=>{
+
+          if(
+            !names.includes(
+              exercise[0]
+            )
+          ){
+
+            names.push(
+              exercise[0]
+            );
+
+          }
+
+        });
+
+    });
+
+  names.forEach(name=>{
+
+    const option =
+      document.createElement(
+        "option"
+      );
+
+    option.value =
+      name;
+
+    option.textContent =
+      name;
+
+    selector.appendChild(
+      option
+    );
+
+  });
+
+  if(
+    names.includes(current)
+  ){
+
+    selector.value =
+      current;
+
+  }
+
+}
+
+
+/* =========================================================
+   GRÁFICO
+========================================================= */
+
+function drawChart(){
+
+  const selector =
+    document.getElementById(
+      "exerciseSelector"
+    );
+
+  const exerciseName =
+    selector.value;
+
+  const canvas =
+    document.getElementById(
+      "progressChart"
+    );
+
+  const ctx =
+    canvas.getContext("2d");
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  if(!exerciseName){
+
+    ctx.fillStyle =
+      "#9aa3af";
+
+    ctx.font =
+      "16px Arial";
+
+    ctx.textAlign =
+      "center";
+
+    ctx.fillText(
+      "Selecciona un ejercicio",
+      canvas.width/2,
+      canvas.height/2
+    );
+
+    return;
+  }
+
+  const records = [];
+
+  [...data.workouts]
+    .sort(
+      (a,b)=>
+        new Date(a.date) -
+        new Date(b.date)
+    )
+    .forEach(workout=>{
+
+      workout.exercises
+        .forEach(exercise=>{
+
+          if(
+            exercise.name ===
+            exerciseName
+          ){
+
+            records.push({
+
+              date:
+                new Date(
+                  workout.date
+                ),
+
+              volume:
+                calculateExerciseVolume(
+                  exercise
+                )
+
+            });
+
+          }
+
+        });
+
+    });
+
+  if(!records.length){
+
+    ctx.fillStyle =
+      "#9aa3af";
+
+    ctx.font =
+      "16px Arial";
+
+    ctx.textAlign =
+      "center";
+
+    ctx.fillText(
+      "Todavía no hay datos",
+      canvas.width/2,
+      canvas.height/2
+    );
+
+    return;
+  }
+
+  const padding = 55;
+
+  const chartWidth =
+    canvas.width -
+    padding * 2;
+
+  const chartHeight =
+    canvas.height -
+    padding * 2;
+
+  const max =
+    Math.max(
+      ...records.map(
+        r=>r.volume
+      ),
+      1
+    );
+
+  /* Ejes */
+
+  ctx.strokeStyle =
+    "#303641";
+
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    padding,
+    padding
+  );
+
+  ctx.lineTo(
+    padding,
+    canvas.height-padding
+  );
+
+  ctx.lineTo(
+    canvas.width-padding,
+    canvas.height-padding
+  );
+
+  ctx.stroke();
+
+
+  /* Línea */
+
+  ctx.strokeStyle =
+    "#e0b15a";
+
+  ctx.lineWidth = 3;
+
+  ctx.beginPath();
+
+  records.forEach(
+    (record,index)=>{
+
+      const x =
+        padding +
+        (
+          records.length === 1
+          ? chartWidth/2
+          : (
+            index /
+            (records.length-1)
+          ) *
+          chartWidth
+        );
+
+      const y =
+        canvas.height -
+        padding -
+        (
+          record.volume /
+          max *
+          chartHeight
+        );
+
+      if(index===0){
+
+        ctx.moveTo(
+          x,
+          y
+        );
+
+      }else{
+
+        ctx.lineTo(
+          x,
+          y
+        );
+
+      }
+
+    }
+  );
+
+  ctx.stroke();
+
+
+  /* Puntos */
+
+  ctx.fillStyle =
+    "#e0b15a";
+
+  records.forEach(
+    (record,index)=>{
+
+      const x =
+        padding +
+        (
+          records.length === 1
+          ? chartWidth/2
+          : (
+            index /
+            (records.length-1)
+          ) *
+          chartWidth
+        );
+
+      const y =
+        canvas.height -
+        padding -
+        (
+          record.volume /
+          max *
+          chartHeight
+        );
+
+      ctx.beginPath();
+
+      ctx.arc(
+        x,
+        y,
+        5,
+        0,
+        Math.PI*2
+      );
+
+      ctx.fill();
+
+    }
+  );
+
+
+  /* Máximo */
+
+  ctx.fillStyle =
+    "#9aa3af";
+
+  ctx.font =
+    "12px Arial";
+
+  ctx.textAlign =
+    "left";
+
+  ctx.fillText(
+    formatNumber(max) +
+    " kg",
+    8,
+    padding+5
+  );
+
+}
+
+
+/* =========================================================
+   EXPORTAR
+========================================================= */
+
+function exportData(){
+
+  const json =
+    JSON.stringify(
+      data,
+      null,
+      2
+    );
+
+  const blob =
+    new Blob(
+      [json],
+      {
+        type:
+          "application/json"
+      }
+    );
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+  const a =
+    document.createElement(
+      "a"
+    );
+
+  a.href = url;
+
+  a.download =
+    "troya-gym-backup.json";
+
+  a.click();
+
+  URL.revokeObjectURL(
+    url
+  );
+
+  showMessage(
+    "Datos exportados."
+  );
+
+}
+
+
+/* =========================================================
+   IMPORTAR
+========================================================= */
+
+function importData(event){
+
+  const file =
+    event.target.files[0];
+
+  if(!file) return;
+
+  const reader =
+    new FileReader();
+
+  reader.onload =
+    function(e){
+
+      try{
+
+        const imported =
+          JSON.parse(
+            e.target.result
+          );
+
+        if(
+          !imported ||
+          !Array.isArray(
+            imported.workouts
+          )
+        ){
+
+          throw new Error(
+            "Formato incorrecto"
+          );
+
+        }
+
+        data =
+          imported;
+
+        saveData();
+
+        loadPreviousValues();
+
+        updateSummary();
+
+        updateHistory();
+
+        populateExerciseSelector();
+
+        drawChart();
+
+        showMessage(
+          "Datos importados correctamente."
+        );
+
+      }catch(error){
+
+        alert(
+          "No se pudo importar el archivo."
+        );
+
+      }
+
+    };
+
+  reader.readAsText(
+    file
+  );
+
+  event.target.value = "";
+
+}
+
+
+/* =========================================================
+   BORRAR DATOS
+========================================================= */
+
+function deleteAllData(){
+
+  if(
+    !confirm(
+      "¿Seguro que quieres borrar TODO el historial? Esta acción no se puede deshacer."
+    )
+  ){
+
+    return;
+
+  }
+
+  data = {
+    workouts:[]
+  };
+
+  saveData();
+
+  loadPreviousValues();
+
+  updateSummary();
+
+  updateHistory();
+
+  populateExerciseSelector();
+
+  drawChart();
+
+  showMessage(
+    "Todos los datos han sido eliminados."
+  );
+
+}
+
+
+/* =========================================================
+   INICIALIZACIÓN
+========================================================= */
+
+renderDays();
+
+updateSummary();
+
+updateHistory();
+
+populateExerciseSelector();
+
+drawChart();
+
+</script>
+
+</body>
+</html>
