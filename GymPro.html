@@ -4,24 +4,27 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b0d10">
 <title>GymPro</title>
 <style>
-:root{--bg:#0b0d10;--card:#15181d;--card2:#1d2229;--line:#303640;--text:#f5f7fa;--muted:#98a1ad;--accent:#e4b45e;--ok:#55d98b;--warn:#f0b85b;--danger:#ef7373}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+:root{--bg:#0b0d10;--card:#15181d;--card2:#1d2229;--line:#303640;--text:#f5f7fa;--muted:#98a1ad;--accent:#e4b45e;--ok:#55d98b;--warn:#f0b85b;--danger:#ef7373}*{box-sizing:border-box}
 
-/* Contenedor principal con espacio arriba para que el header fijo no tape el contenido */
-.app{max-width:760px;margin:auto;padding:85px 16px 60px}
+/* Bloquea el scroll general del navegador en el dispositivo móvil */
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;height:100%;overflow:hidden}
 
-/* Header completamente fijo que agrupa el logo y la barra */
+/* El scroll ahora vive dentro de esta caja, evitando que el teclado de iOS mueva el header */
+.app{max-width:760px;margin:auto;padding:85px 16px 60px;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* Header completamente fijo en diseño de columna para apilar el logo y la barra */
 .top{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--bg);padding:10px 16px 0;max-width:760px;margin:0 auto;display:flex;flex-direction:column}
 
-/* Contenedor interno para alinear logo y botón en la misma línea */
+/* Contenedor interno para alinear logo y botón de reinicio en la misma línea */
 .top-row{display:flex;justify-content:space-between;align-items:center}
 
-/* La barra de progreso adaptada para el header sin márgenes gigantes */
+/* La barra de progreso adaptada para el nuevo flujo vertical del header */
 .progress{height:4px;background:var(--card2);border-radius:9px;margin:12px 0 10px;overflow:hidden}
 .progress i{display:block;height:100%;background:var(--accent);width:0;transition:width 0.3s ease}
 
-.logo{font-size:24px;font-weight:900}.screen{display:none}.screen.active{display:block}.eyebrow{font-size:11px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);margin-bottom:9px}h1{font-size:42px;line-height:1.02;letter-spacing:-1.6px;margin:0 0 18px}h2{font-size:30px;letter-spacing:-.8px;margin:0 0 10px}h3{margin:0 0 9px}.lead,.muted{color:var(--muted);line-height:1.55}.hero{padding:42px 0}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}.field{margin:18px 0}.field>label{display:block;font-weight:750;margin-bottom:9px}.hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:7px}
+.logo{font-size:24px;font-weight:900}.screen{display:none}.screen.active{display:block}.eyebrow{font-size:11px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);margin-bottom:9px}h1{font-size:42px;line-height:1.02;letter-spacing:-1.6px;margin:0 0 18px}h2{font-size:30px;letter-spacing:-.8px;margin:0 0 10px}h3{margin:0 0 9px}.lead,.muted{color:var(--muted);line-height:1.55}.hero{padding:42px 0}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0}.field{margin:18px 0}.field>label{display:block;font-weight:750;margin-bottom:9px} .hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:7px}
 
-/* El input corregido con 16px para evitar el zoom molesto de iOS */
+/* Fuente corregida a 16px exactos para bloquear el zoom nativo de Safari */
 .input{width:100%;padding:13px;font-size:16px;border-radius:11px;border:1px solid var(--line);background:#0f1216;color:var(--text);outline:none}.input:focus{border-color:var(--accent)}
 
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.choices{display:grid;gap:9px}
@@ -29,6 +32,7 @@
 .banner{padding:15px;border-radius:14px;border:1px solid var(--line);background:var(--card2);margin:12px 0}.banner.ok{border-color:var(--ok)}.banner.warn{border-color:var(--warn)}.smallbtn{padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--text);cursor:pointer}.metric{display:grid;grid-template-columns:1fr 1fr;gap:9px}.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;justify-content:center;z-index:5}.modal.show{display:flex}.sheet{width:min(760px,100%);background:var(--card);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:20px;max-height:85vh;overflow:auto}.list{display:grid;gap:8px}.footer{color:var(--muted);font-size:11px;margin-top:30px;text-align:center}@media(max-width:520px){.grid,.summary,.metric{grid-template-columns:1fr}h1{font-size:36px}}
 </style>
 </head>
+
 
 <body>
 <div class="app">
@@ -41,7 +45,7 @@
   </div>
 
 
-<section id="intro" class="screen active"><div class="hero"><div class="eyebrow">Tu entrenamiento. Tu camino.</div><h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1><p class="lead">GymPro construye un camino personalizado desde tu punto de partida, te guía sesión a sesión y te avisa cuándo toca progresar o pasar a la siguiente fase.</p><div class="actions"><button class="btn primary" onclick="show('personal',1)">Empezar</button></div></div></section>
+<section id="intro" class="screen active"><div class="hero"><div class="eyebrow">Tu3 entrenamiento. Tu camino.</div><h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1><p class="lead">GymPro construye un camino personalizado desde tu punto de partida, te guía sesión a sesión y te avisa cuándo toca progresar o pasar a la siguiente fase.</p><div class="actions"><button class="btn primary" onclick="show('personal',1)">Empezar</button></div></div></section>
 
 <section id="personal" class="screen"><button class="back" onclick="show('intro',0)">← Volver</button><div class="eyebrow">1 · Conócete</div><h2>Vamos a conocerte un poco</h2><p class="muted">Solo necesitamos lo esencial para construir tu primer plan.</p><div class="card">
 <div class="field"><label>Edad</label><input id="age" class="input" type="number" min="13" max="100" placeholder="Ej. 32"></div>
