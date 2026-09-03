@@ -10,7 +10,7 @@
 .app{max-width:760px;margin:auto;padding:85px 16px 60px}
 
 /* Header completamente fijo que agrupa el logo y la barra */
-.top{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--bg);padding:10px 16px 0;max-width:760px;margin:0 auto}
+.top{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--bg);padding:10px 16px 0;max-width:760px;margin:0 auto;display:flex;flex-direction:column}
 
 /* Contenedor interno para alinear logo y botón en la misma línea */
 .top-row{display:flex;justify-content:space-between;align-items:center}
@@ -41,7 +41,7 @@
   </div>
 
 
-<section id="intro" class="screen active"><div class="hero"><div class="eyebrow">Tu2 entrenamiento. Tu camino.</div><h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1><p class="lead">GymPro construye un camino personalizado desde tu punto de partida, te guía sesión a sesión y te avisa cuándo toca progresar o pasar a la siguiente fase.</p><div class="actions"><button class="btn primary" onclick="show('personal',1)">Empezar</button></div></div></section>
+<section id="intro" class="screen active"><div class="hero"><div class="eyebrow">Tu entrenamiento. Tu camino.</div><h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1><p class="lead">GymPro construye un camino personalizado desde tu punto de partida, te guía sesión a sesión y te avisa cuándo toca progresar o pasar a la siguiente fase.</p><div class="actions"><button class="btn primary" onclick="show('personal',1)">Empezar</button></div></div></section>
 
 <section id="personal" class="screen"><button class="back" onclick="show('intro',0)">← Volver</button><div class="eyebrow">1 · Conócete</div><h2>Vamos a conocerte un poco</h2><p class="muted">Solo necesitamos lo esencial para construir tu primer plan.</p><div class="card">
 <div class="field"><label>Edad</label><input id="age" class="input" type="number" min="13" max="100" placeholder="Ej. 32"></div>
