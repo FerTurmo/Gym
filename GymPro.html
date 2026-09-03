@@ -316,10 +316,22 @@ function evaluateCoach(){el('evaluation').innerHTML='<div class="card"><span cla
 function openSub(name){el('subModal').classList.add('show')}
 function closeModal(){el('subModal').classList.remove('show')}
 
+// Arreglo definitivo para el teclado en iOS Safari y el rebote del footer
 if (window.visualViewport) {
   const appContainer = document.querySelector('.app');
+  const footer = document.querySelector('.footer');
+  
   const adjustViewport = () => {
+    const keyboardOpen = window.visualViewport.height < window.innerHeight * 0.75;
+    
+    // Asignamos el alto visible real de la pantalla
     appContainer.style.height = `${window.visualViewport.height}px`;
+    
+    // Si el teclado está abierto, ocultamos el footer para que no empuje nada
+    if (footer) {
+      footer.style.display = keyboardOpen ? 'none' : 'block';
+    }
+
     const activeEl = document.activeElement;
     if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) {
       setTimeout(() => {
@@ -327,6 +339,7 @@ if (window.visualViewport) {
       }, 80);
     }
   };
+
   window.visualViewport.addEventListener('resize', adjustViewport);
   window.visualViewport.addEventListener('scroll', adjustViewport);
 }
