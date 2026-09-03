@@ -13,7 +13,21 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 .app{max-width:760px;margin:auto;padding:85px 16px 60px;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
 /* Header completamente fijo en diseño de columna para apilar el logo y la barra */
-.top{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--bg);padding:10px 16px 0;max-width:760px;margin:0 auto;display:flex;flex-direction:column}
+/* Header adaptado para el teclado de iOS */
+.top {
+    position: fixed;
+    top: var(--keyboard-offset, 0px); /* ← Esta variable evitará que se esconda */
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding: 10px 16px 0;
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
 
 /* Contenedor interno para alinear logo y botón de reinicio en la misma línea */
 .top-row{display:flex;justify-content:space-between;align-items:center}
@@ -119,4 +133,23 @@ let target=null;function openSub(name){target=decodeURIComponent(name);const x=E
 function saveMetrics(){const w=parseFloat(el('logWeight').value),f=parseFloat(el('logFat').value);if(!w&&!f){alert('Introduce al menos un dato.');return}S.metrics.push({date:new Date().toLocaleDateString('es-ES'),weight:w||null,fat:f||null});if(w)S.weight=w;if(f)S.fat=f;save();renderMetrics();el('logWeight').value='';el('logFat').value=''}function renderMetrics(){el('metricHistory').innerHTML=S.metrics.slice().reverse().map(x=>`<div class="card"><b>${x.date}</b><div class="muted">Peso: ${x.weight?x.weight+' kg':'—'} · Grasa: ${x.fat?x.fat+'%':'—'}</div></div>`).join('')||'<p class="muted">Todavía no hay registros.</p>'}function evaluateCoach(){if(!S.selfCheck){alert('Indica cómo sientes tu progreso.');return}save();const r=coachRecommendation();el('evaluation').innerHTML=`<div class="banner ${r.ready?'ok':'warn'}">${r.text}</div>`}
 function resetApp(){if(confirm('¿Borrar el perfil y empezar de nuevo?')){localStorage.removeItem(KEY);location.reload()}}
 if(S.planCreated){renderRoadmap();renderDashboard();show('dashboard',8)}save();
-</script></body></html>
+</script>
+<script>
+// Arreglo definitivo para el header fijo en iOS con teclado desplegado
+if (window.visualViewport) {
+    const header = document.querySelector('.top');
+    
+    const adjustHeaderForKeyboard = () => {
+        // Calcula cuánto se ha desplazado el lienzo hacia arriba por el teclado
+        const offset = window.visualViewport.offsetTop;
+        // Mueve el header hacia abajo exactamente esa misma distancia para mantenerlo visible
+        header.style.setProperty('--keyboard-offset', `${offset}px`);
+    };
+
+    // Escucha cuando el visor cambia de tamaño o se desplaza (abrir/cerrar teclado)
+    window.visualViewport.addEventListener('resize', adjustHeaderForKeyboard);
+    window.visualViewport.addEventListener('scroll', adjustHeaderForKeyboard);
+}
+</script>
+
+</body></html>
