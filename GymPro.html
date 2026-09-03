@@ -1,12 +1,11 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>GymPro</title>
 <style>
 :root{--bg:#0b0d10;--card:#15181d;--card2:#1d2229;--line:#303640;--text:#f5f7fa;--muted:#98a1ad;--accent:#e4b45e;--ok:#55d98b;--warn:#f0b85b;--danger:#ef7373}*{box-sizing:border-box}
 
-/* Forzamos a que la pantalla mida exactamente el alto del dispositivo y nunca haga scroll global */
 html, body {
     margin: 0;
     padding: 0;
@@ -16,10 +15,9 @@ html, body {
     height: 100%;
     width: 100%;
     overflow: hidden;
-    position: fixed; /* Evita por completo que iOS desplace el lienzo */
+    position: fixed;
 }
 
-/* El contenedor principal se vuelve un contenedor vertical rígido */
 .app {
     display: flex;
     flex-direction: column;
@@ -29,15 +27,14 @@ html, body {
     margin: auto;
 }
 
-/* El Header ya NO flota sobre el contenido. Ahora es una pieza estática arriba que nunca se moverá */
 .top {
-    flex-shrink: 0; /* Impide que el teclado lo aplaste o deforme */
+    flex-shrink: 0;
     background: var(--bg);
     padding: 10px 16px 5px;
     display: flex;
     flex-direction: column;
     z-index: 10;
-    border-bottom: 1px solid var(--line); /* Una línea sutil para separar el header del contenido */
+    border-bottom: 1px solid var(--line);
 }
 
 .top-row {
@@ -61,17 +58,17 @@ html, body {
     transition: width 0.3s ease;
 }
 
-/* Las secciones del gimnasio se quedan aquí dentro. ESTA zona es la única que tiene permiso para hacer scroll */
 .screen {
     flex-grow: 1;
-    overflow-y: auto; /* El scroll ocurre exclusivamente aquí dentro */
+    overflow-y: auto;
     padding: 20px 16px 60px;
-    -webkit-overflow-scrolling: touch; /* Scroll fluido tipo app en iOS */
+    -webkit-overflow-scrolling: touch;
+    display: none;
 }
 
-/* Forzamos a que la pantalla activa se muestre correctamente en el nuevo flujo */
 .screen.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
 .logo { font-size:24px; font-weight:900 }
@@ -86,7 +83,6 @@ h3 { margin:0 0 9px }
 .field>label { display:block; font-weight:750; margin-bottom:9px }
 .hint { font-size:12px; color:var(--muted); line-height:1.45; margin-top:7px }
 
-/* Bloqueo del zoom automático de iOS */
 .input {
     width: 100%;
     padding: 13px;
@@ -144,9 +140,6 @@ h3 { margin:0 0 9px }
 @media(max-width:520px){ .grid, .summary, .metric { grid-template-columns:1fr } h1 { font-size:36px } }
 </style>
 </head>
-
-
-
 <body>
 <div class="app">
   <div class="top">
@@ -157,41 +150,121 @@ h3 { margin:0 0 9px }
     <div class="progress"><i id="bar"></i></div>
   </div>
 
+  <section id="intro" class="screen active">
+    <div class="hero">
+      <div class="eyebrow">Tu entrenamiento. Tu camino.</div>
+      <h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1>
+      <p class="lead">GymPro construye un camino personalizado desde tu punto de partida, te guía sesión a sesión y te avisa cuándo toca progresar o pasar a la siguiente fase.</p>
+      <div class="actions"><button class="btn primary" onclick="show('personal',1)">Empezar</button></div>
+    </div>
+  </section>
 
-<section id="intro" class="screen active"><div class="hero"><div class="eyebrow">Tu entrenamiento. Tu camino.</div><h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1><p class="lead">GymPro construye un camino personalizado desde tu punto de partida, te guía sesión a sesión y te avisa cuándo toca progresar o pasar a la siguiente fase.</p><div class="actions"><button class="btn primary" onclick="show('personal',1)">Empezar</button></div></div></section>
+  <section id="personal" class="screen">
+    <button class="back" onclick="show('intro',0)">← Volver</button>
+    <div class="eyebrow">1 · Conócete</div>
+    <h2>Vamos a conocerte un poco</h2>
+    <p class="muted">Solo necesitamos lo esencial para construir tu primer plan.</p>
+    <div class="card">
+      <div class="field"><label>Edad</label><input id="age" class="input" type="number" min="13" max="100" placeholder="Ej. 32"></div>
+      <div class="field"><label>Sexo</label><div class="grid" id="sex"><button class="choice" data-v="male" onclick="pick('sex',this)">Hombre</button><button class="choice" data-v="female" onclick="pick('sex',this)">Mujer</button></div></div>
+      <div class="grid"><div class="field"><label>Altura (cm)</label><input id="height" class="input" type="number" min="100" max="230" placeholder="180"></div><div class="field"><label>Peso (kg)</label><input id="weight" class="input" type="number" min="30" max="250" step="0.1" placeholder="70"></div></div>
+      <div class="field"><label>¿Cómo describirías tu estado físico actual?</label><div class="grid" id="physique"><button class="choice" data-v="very_thin" onclick="pick('physique',this)">Muy delgado</button><button class="choice" data-v="thin" onclick="pick('physique',this)">Delgado</button><button class="choice" data-v="normal" onclick="pick('physique',this)">Normal</button><button class="choice" data-v="some_fat" onclick="pick('physique',this)">Algo de grasa</button><button class="choice" data-v="fat" onclick="pick('physique',this)">Bastante grasa</button><button class="choice" data-v="muscular" onclick="pick('physique',this)">Musculoso</button><button class="choice" data-v="very_muscular" onclick="pick('physique',this)">Muy musculoso</button></div></div>
+      <div id="e1" class="error">Completa todos los datos.</div>
+    </div>
+    <button class="btn primary" onclick="personalNext()">Continuar</button>
+  </section>
 
-<section id="personal" class="screen"><button class="back" onclick="show('intro',0)">← Volver</button><div class="eyebrow">1 · Conócete</div><h2>Vamos a conocerte un poco</h2><p class="muted">Solo necesitamos lo esencial para construir tu primer plan.</p><div class="card">
-<div class="field"><label>Edad</label><input id="age" class="input" type="number" min="13" max="100" placeholder="Ej. 32"></div>
-<div class="field"><label>Sexo</label><div class="grid" id="sex"><button class="choice" data-v="male" onclick="pick('sex',this)">Hombre</button><button class="choice" data-v="female" onclick="pick('sex',this)">Mujer</button></div></div>
-<div class="grid"><div class="field"><label>Altura (cm)</label><input id="height" class="input" type="number" min="100" max="230" placeholder="180"></div><div class="field"><label>Peso (kg)</label><input id="weight" class="input" type="number" min="30" max="250" step="0.1" placeholder="70"></div></div>
-<div class="field"><label>¿Cómo describirías tu estado físico actual?</label><div class="grid" id="physique"><button class="choice" data-v="very_thin" onclick="pick('physique',this)">Muy delgado</button><button class="choice" data-v="thin" onclick="pick('physique',this)">Delgado</button><button class="choice" data-v="normal" onclick="pick('physique',this)">Normal</button><button class="choice" data-v="some_fat" onclick="pick('physique',this)">Algo de grasa</button><button class="choice" data-v="fat" onclick="pick('physique',this)">Bastante grasa</button><button class="choice" data-v="muscular" onclick="pick('physique',this)">Musculoso</button><button class="choice" data-v="very_muscular" onclick="pick('physique',this)">Muy musculoso</button></div></div><div id="e1" class="error">Completa todos los datos.</div></div><button class="btn primary" onclick="personalNext()">Continuar</button></section>
+  <section id="experience" class="screen">
+    <button class="back" onclick="show('personal',1)">← Volver</button>
+    <div class="eyebrow">2 · Experiencia</div>
+    <h2>¿Cuál es tu experiencia entrenando?</h2>
+    <div class="card choices" id="exp">
+      <button class="choice" data-v="beginner" onclick="pick('exp',this)">Principiante<small>Nunca o casi nunca he entrenado</small></button>
+      <button class="choice" data-v="intermediate" onclick="pick('exp',this)">Intermedio<small>Llevo tiempo entrenando y sigo progresando</small></button>
+      <button class="choice" data-v="advanced" onclick="pick('exp',this)">Avanzado<small>Llevo años entrenando y tengo bastante experiencia</small></button>
+    </div>
+    <div id="e2" class="error">Selecciona tu nivel.</div>
+    <button class="btn primary" onclick="expNext()">Continuar</button>
+  </section>
 
-<section id="experience" class="screen"><button class="back" onclick="show('personal',1)">← Volver</button><div class="eyebrow">2 · Experiencia</div><h2>¿Cuál es tu experiencia entrenando?</h2><div class="card choices" id="exp"><button class="choice" data-v="beginner" onclick="pick('exp',this)">Principiante<small>Nunca o casi nunca he entrenado</small></button><button class="choice" data-v="intermediate" onclick="pick('exp',this)">Intermedio<small>Llevo tiempo entrenando y sigo progresando</small></button><button class="choice" data-v="advanced" onclick="pick('exp',this)">Avanzado<small>Llevo años entrenando y tengo bastante experiencia</small></button></div><div id="e2" class="error">Selecciona tu nivel.</div><button class="btn primary" onclick="expNext()">Continuar</button></section>
+  <section id="goal" class="screen">
+    <button class="back" onclick="show('experience',2)">← Volver</button>
+    <div class="eyebrow">3 · Objetivo</div>
+    <h2>¿Qué quieres conseguir?</h2>
+    <p class="muted">Elige un único objetivo principal. Tus demás datos nos dirán cómo llegar hasta él.</p>
+    <div class="card choices" id="goals">
+      <button class="choice" data-v="muscle" onclick="goalPick(this)">💪 Ganar músculo</button>
+      <button class="choice" data-v="fat" onclick="goalPick(this)">🔥 Perder grasa</button>
+        <button class="choice" data-v="recomp" onclick="goalPick(this)">⚖️ Ganar músculo y perder grasa</button>
+      <button class="choice" data-v="athletic" onclick="goalPick(this)">🏃 Conseguir un cuerpo atlético</button>
+      <button class="choice" data-v="bodybuilder" onclick="goalPick(this)">🏆 Conseguir un físico muy musculado</button>
+      <button class="choice" data-v="health" onclick="goalPick(this)">❤️ Mantenerme en forma y saludable</button>
+      <button class="choice" data-v="sport" onclick="goalPick(this)">⚡ Mejorar mi rendimiento deportivo</button>
+    </div>
+    <div id="sportBox" class="card hidden"><label><b>¿Qué deporte practicas?</b></label><div class="grid" id="sports"><button class="choice" data-v="football" onclick="pick('sports',this)">⚽ Fútbol</button><button class="choice" data-v="basketball" onclick="pick('sports',this)">🏀 Baloncesto</button><button class="choice" data-v="rugby" onclick="pick('sports',this)">🏉 Rugby</button><button class="choice" data-v="running" onclick="pick('sports',this)">🏃 Running</button><button class="choice" data-v="cycling" onclick="pick('sports',this)">🚴 Ciclismo</button><button class="choice" data-v="triathlon" onclick="pick('sports',this)">🏊 Triatlón</button><button class="choice" data-v="swimming" onclick="pick('sports',this)">🏊 Natación</button><button class="choice" data-v="tennis" onclick="pick('sports',this)">🎾 Tenis</button><button class="choice" data-v="padel" onclick="pick('sports',this)">🎾 Pádel</button><button class="choice" data-v="combat" onclick="pick('sports',this)">🥊 Combate</button><button class="choice" data-v="outdoor" onclick="pick('sports',this)">🏔️ Montaña / outdoor</button></div></div>
+    <div id="e3" class="error">Selecciona un objetivo y, si corresponde, un deporte.</div>
+    <button class="btn primary" onclick="goalNext()">Continuar</button>
+  </section>
 
-<section id="goal" class="screen"><button class="back" onclick="show('experience',2)">← Volver</button><div class="eyebrow">3 · Objetivo</div><h2>¿Qué quieres conseguir?</h2><p class="muted">Elige un único objetivo principal. Tus demás datos nos dirán cómo llegar hasta él.</p><div class="card choices" id="goals"><button class="choice" data-v="muscle" onclick="goalPick(this)">💪 Ganar músculo</button><button class="choice" data-v="fat" onclick="goalPick(this)">🔥 Perder grasa</button><button class="choice" data-v="recomp" onclick="goalPick(this)">⚖️ Ganar músculo y perder grasa</button><button class="choice" data-v="athletic" onclick="goalPick(this)">🏃 Conseguir un cuerpo atlético</button><button class="choice" data-v="bodybuilder" onclick="goalPick(this)">🏆 Conseguir un físico muy musculado</button><button class="choice" data-v="health" onclick="goalPick(this)">❤️ Mantenerme en forma y saludable</button><button class="choice" data-v="sport" onclick="goalPick(this)">⚡ Mejorar mi rendimiento deportivo</button></div>
-<div id="sportBox" class="card hidden"><label><b>¿Qué deporte practicas?</b></label><div class="grid" id="sports"><button class="choice" data-v="football" onclick="pick('sports',this)">⚽ Fútbol</button><button class="choice" data-v="basketball" onclick="pick('sports',this)">🏀 Baloncesto</button><button class="choice" data-v="rugby" onclick="pick('sports',this)">🏉 Rugby</button><button class="choice" data-v="running" onclick="pick('sports',this)">🏃 Running</button><button class="choice" data-v="cycling" onclick="pick('sports',this)">🚴 Ciclismo</button><button class="choice" data-v="triathlon" onclick="pick('sports',this)">🏊 Triatlón</button><button class="choice" data-v="swimming" onclick="pick('sports',this)">🏊 Natación</button><button class="choice" data-v="tennis" onclick="pick('sports',this)">🎾 Tenis</button><button class="choice" data-v="padel" onclick="pick('sports',this)">🎾 Pádel</button><button class="choice" data-v="combat" onclick="pick('sports',this)">🥊 Combate</button><button class="choice" data-v="outdoor" onclick="pick('sports',this)">🏔️ Montaña / outdoor</button></div></div><div id="e3" class="error">Selecciona un objetivo y, si corresponde, un deporte.</div><button class="btn primary" onclick="goalNext()">Continuar</button></section>
+  <section id="config" class="screen">
+    <button class="back" onclick="show('goal',3)">← Volver</button>
+    <div class="eyebrow">4 · Tu entrenamiento</div>
+    <h2>Ahora configuramos tu entrenamiento</h2>
+    <div class="card">
+      <div class="field"><label>Sesiones mínimas por semana</label><div class="grid" id="minDays"><button class="choice" data-v="1" onclick="pick('minDays',this)">1 sesión</button><button class="choice" data-v="2" onclick="pick('minDays',this)">2 sesiones</button><button class="choice" data-v="3" onclick="pick('minDays',this)">3 sesiones</button><button class="choice" data-v="4" onclick="pick('minDays',this)">4 sesiones</button><button class="choice" data-v="5" onclick="pick('minDays',this)">5 sesiones</button><button class="choice" data-v="6" onclick="pick('minDays',this)">6 sesiones</button><button class="choice" data-v="7" onclick="pick('minDays',this)">7 sesiones</button></div></div>
+      <div class="field"><label>Sesiones máximas por semana</label><select id="maxDays" class="input"><option value="">Selecciona</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select><div class="hint">No asignamos rutinas a lunes/martes. Son sesiones en la semana. Las sesiones extra son opcionales.</div></div>
+      <div class="field"><label>Tiempo habitual por sesión</label><div class="grid" id="duration"><button class="choice" data-v="30" onclick="pick('duration',this)">30 min</button><button class="choice" data-v="45" onclick="pick('duration',this)">45 min</button><button class="choice" data-v="60" onclick="pick('duration',this)">60 min</button><button class="choice" data-v="75" onclick="pick('duration',this)">75 min</button><button class="choice" data-v="90" onclick="pick('duration',this)">90+ min</button></div></div>
+      <div class="field"><label>¿Dónde entrenas?</label><div class="grid" id="location"><button class="choice" data-v="gym" onclick="pick('location',this)">🏋️ Gimnasio</button><button class="choice" data-v="home" onclick="pick('location',this)">🏠 Casa</button><button class="choice" data-v="outdoor" onclick="pick('location',this)">🌳 Exterior</button><button class="choice" data-v="mixed" onclick="pick('location',this)">🔄 Mixto</button></div></div>
+      <div class="field"><label>¿Qué equipamiento te gusta utilizar?</label><div class="grid" id="equipment"><button class="choice" data-v="machines" onclick="toggle('equipment',this)">Máquinas</button><button class="choice" data-v="cables" onclick="toggle('equipment',this)">Poleas</button><button class="choice" data-v="dumbbells" onclick="toggle('equipment',this)">Mancuernas</button><button class="choice" data-v="barbells" onclick="toggle('equipment',this)">Barras y discos</button><button class="choice" data-v="bodyweight" onclick="toggle('equipment',this)">Peso corporal</button><button class="choice" data-v="kettlebells" onclick="toggle('equipment',this)">Kettlebells</button><button class="choice" data-v="bands" onclick="toggle('equipment',this)">Bandas</button></div></div>
+      <div class="field"><label style="display:flex;gap:9px;align-items:center"><input id="advancedCheck" type="checkbox"> Quiero personalizar aún más mi entrenamiento</label><div class="hint">Podrás priorizar músculos, cardio, estructura y zonas a proteger.</div></div>
+      <div id="e4" class="error">Completa los datos necesarios. El máximo no puede ser menor que el mínimo.</div>
+    </div>
+    <button class="btn primary" onclick="configNext()">Continuar</button>
+  </section>
 
-<section id="config" class="screen"><button class="back" onclick="show('goal',3)">← Volver</button><div class="eyebrow">4 · Tu entrenamiento</div><h2>Ahora configuramos tu entrenamiento</h2><div class="card">
-<div class="field"><label>Sesiones mínimas por semana</label><div class="grid" id="minDays"><button class="choice" data-v="1" onclick="pick('minDays',this)">1 sesión</button><button class="choice" data-v="2" onclick="pick('minDays',this)">2 sesiones</button><button class="choice" data-v="3" onclick="pick('minDays',this)">3 sesiones</button><button class="choice" data-v="4" onclick="pick('minDays',this)">4 sesiones</button><button class="choice" data-v="5" onclick="pick('minDays',this)">5 sesiones</button><button class="choice" data-v="6" onclick="pick('minDays',this)">6 sesiones</button><button class="choice" data-v="7" onclick="pick('minDays',this)">7 sesiones</button></div></div>
-<div class="field"><label>Sesiones máximas por semana</label><select id="maxDays" class="input"><option value="">Selecciona</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select><div class="hint">No asignamos rutinas a lunes/martes. Son sesiones en la semana. Las sesiones extra son opcionales.</div></div>
-<div class="field"><label>Tiempo habitual por sesión</label><div class="grid" id="duration"><button class="choice" data-v="30" onclick="pick('duration',this)">30 min</button><button class="choice" data-v="45" onclick="pick('duration',this)">45 min</button><button class="choice" data-v="60" onclick="pick('duration',this)">60 min</button><button class="choice" data-v="75" onclick="pick('duration',this)">75 min</button><button class="choice" data-v="90" onclick="pick('duration',this)">90+ min</button></div></div>
-<div class="field"><label>¿Dónde entrenas?</label><div class="grid" id="location"><button class="choice" data-v="gym" onclick="pick('location',this)">🏋️ Gimnasio</button><button class="choice" data-v="home" onclick="pick('location',this)">🏠 Casa</button><button class="choice" data-v="outdoor" onclick="pick('location',this)">🌳 Exterior</button><button class="choice" data-v="mixed" onclick="pick('location',this)">🔄 Mixto</button></div></div>
-<div class="field"><label>¿Qué equipamiento te gusta utilizar?</label><div class="grid" id="equipment"><button class="choice" data-v="machines" onclick="toggle('equipment',this)">Máquinas</button><button class="choice" data-v="cables" onclick="toggle('equipment',this)">Poleas</button><button class="choice" data-v="dumbbells" onclick="toggle('equipment',this)">Mancuernas</button><button class="choice" data-v="barbells" onclick="toggle('equipment',this)">Barras y discos</button><button class="choice" data-v="bodyweight" onclick="toggle('equipment',this)">Peso corporal</button><button class="choice" data-v="kettlebells" onclick="toggle('equipment',this)">Kettlebells</button><button class="choice" data-v="bands" onclick="toggle('equipment',this)">Bandas</button></div></div>
-<div class="field"><label style="display:flex;gap:9px;align-items:center"><input id="advancedCheck" type="checkbox"> Quiero personalizar aún más mi entrenamiento</label><div class="hint">Podrás priorizar músculos, cardio, estructura y zonas a proteger.</div></div><div id="e4" class="error">Completa los datos necesarios. El máximo no puede ser menor que el mínimo.</div></div><button class="btn primary" onclick="configNext()">Continuar</button></section>
+  <section id="advanced" class="screen">
+    <button class="back" onclick="show('config',4)">← Volver</button>
+    <div class="eyebrow">Configuración avanzada · opcional</div>
+    <h2>Personaliza aún más tu entrenamiento</h2>
+    <p class="muted">Todo es opcional. Si no lo sabes, GymPro decide por ti.</p>
+    <div class="card">
+      <div class="field"><label>¿Qué quieres priorizar? (máximo 2)</label><div class="grid" id="priority"><button class="choice" data-v="chest" onclick="limitPick('priority',this,2)">Pecho</button><button class="choice" data-v="back" onclick="limitPick('priority',this,2)">Espalda</button><button class="choice" data-v="shoulders" onclick="limitPick('priority',this,2)">Hombros</button><button class="choice" data-v="arms" onclick="limitPick('priority',this,2)">Brazos</button><button class="choice" data-v="core" onclick="limitPick('priority',this,2)">Core</button><button class="choice" data-v="glutes" onclick="limitPick('priority',this,2)">Glúteos</button><button class="choice" data-v="legs" onclick="limitPick('priority',this,2)">Piernas</button></div></div>
+      <div class="field"><label>Preferencia de enfoque</label><div class="grid" id="style"><button class="choice" data-v="balanced" onclick="pick('style',this)">Equilibrado</button><button class="choice" data-v="aesthetic" onclick="pick('style',this)">Más estética</button><button class="choice" data-v="performance" onclick="pick('style',this)">Más rendimiento</button></div></div>
+      <div class="field"><label>¿Qué estructura prefieres?</label><div class="grid" id="split"><button class="choice" data-v="auto" onclick="pick('split',this)">Tú decide</button><button class="choice" data-v="fullbody" onclick="pick('split',this)">Full body</button><button class="choice" data-v="upperlower" onclick="pick('split',this)">Superior / inferior</button><button class="choice" data-v="ppl" onclick="pick('split',this)">Push / Pull / Legs</button></div></div>
+      <div class="field"><label>Zonas a proteger</label><div class="grid" id="limits"><button class="choice" data-v="shoulder" onclick="toggle('limits',this)">Hombros</button><button class="choice" data-v="elbow" onclick="toggle('limits',this)">Codos</button><button class="choice" data-v="wrist" onclick="toggle('limits',this)">Muñecas</button><button class="choice" data-v="back" onclick="toggle('limits',this)">Espalda</button><button class="choice" data-v="hip" onclick="toggle('limits',this)">Cadera</button><button class="choice" data-v="knee" onclick="toggle('limits',this)">Rodillas</button><button class="choice" data-v="ankle" onclick="toggle('limits',this)">Tobillos</button><button class="choice" data-v="foot" onclick="toggle('limits',this)">Pies</button></div><div class="hint">Sirve para filtrar ejercicios; no sustituye una valoración médica.</div></div>
+    </div>
+    <button class="btn primary" onclick="finishPlan()">Generar mi roadmap</button>
+  </section>
 
-<section id="advanced" class="screen"><button class="back" onclick="show('config',4)">← Volver</button><div class="eyebrow">Configuración avanzada · opcional</div><h2>Personaliza aún más tu entrenamiento</h2><p class="muted">Todo es opcional. Si no lo sabes, GymPro decide por ti.</p><div class="card">
-<div class="field"><label>¿Qué quieres priorizar? (máximo 2)</label><div class="grid" id="priority"><button class="choice" data-v="chest" onclick="limitPick('priority',this,2)">Pecho</button><button class="choice" data-v="back" onclick="limitPick('priority',this,2)">Espalda</button><button class="choice" data-v="shoulders" onclick="limitPick('priority',this,2)">Hombros</button><button class="choice" data-v="arms" onclick="limitPick('priority',this,2)">Brazos</button><button class="choice" data-v="core" onclick="limitPick('priority',this,2)">Core</button><button class="choice" data-v="glutes" onclick="limitPick('priority',this,2)">Glúteos</button><button class="choice" data-v="legs" onclick="limitPick('priority',this,2)">Piernas</button></div></div>
-<div class="field"><label>Preferencia de enfoque</label><div class="grid" id="style"><button class="choice" data-v="balanced" onclick="pick('style',this)">Equilibrado</button><button class="choice" data-v="aesthetic" onclick="pick('style',this)">Más estética</button><button class="choice" data-v="performance" onclick="pick('style',this)">Más rendimiento</button></div></div>
-<div class="field"><label>¿Qué estructura prefieres?</label><div class="grid" id="split"><button class="choice" data-v="auto" onclick="pick('split',this)">Tú decide</button><button class="choice" data-v="fullbody" onclick="pick('split',this)">Full body</button><button class="choice" data-v="upperlower" onclick="pick('split',this)">Superior / inferior</button><button class="choice" data-v="ppl" onclick="pick('split',this)">Push / Pull / Legs</button></div></div>
-<div class="field"><label>Zonas a proteger</label><div class="grid" id="limits"><button class="choice" data-v="shoulder" onclick="toggle('limits',this)">Hombros</button><button class="choice" data-v="elbow" onclick="toggle('limits',this)">Codos</button><button class="choice" data-v="wrist" onclick="toggle('limits',this)">Muñecas</button><button class="choice" data-v="back" onclick="toggle('limits',this)">Espalda</button><button class="choice" data-v="hip" onclick="toggle('limits',this)">Cadera</button><button class="choice" data-v="knee" onclick="toggle('limits',this)">Rodillas</button><button class="choice" data-v="ankle" onclick="toggle('limits',this)">Tobillos</button><button class="choice" data-v="foot" onclick="toggle('limits',this)">Pies</button></div><div class="hint">Sirve para filtrar ejercicios; no sustituye una valoración médica.</div></div></div><button class="btn primary" onclick="finishPlan()">Generar mi roadmap</button></section>
+  <section id="roadmap" class="screen">
+    <div class="eyebrow">Tu camino</div>
+    <h2 id="rTitle"></h2><p id="rIntro" class="muted"></p>
+    <div id="summary" class="summary"></div>
+    <h3 style="margin-top:25px">Roadmap</h3><div id="phases"></div><div id="coachMsg" class="banner"></div>
+    <div class="actions"><button class="btn primary" onclick="openDashboard()">Ir a mi entrenamiento</button><button class="btn secondary" onclick="show('tracking',8);renderMetrics()">Seguimiento</button></div>
+  </section>
 
-<section id="roadmap" class="screen"><div class="eyebrow">Tu camino</div><h2 id="rTitle"></h2><p id="rIntro" class="muted"></p><div id="summary" class="summary"></div><h3 style="margin-top:25px">Roadmap</h3><div id="phases"></div><div id="coachMsg" class="banner"></div><div class="actions"><button class="btn primary" onclick="openDashboard()">Ir a mi entrenamiento</button><button class="btn secondary" onclick="show('tracking',8);renderMetrics()">Seguimiento</button></div></section>
+  <section id="dashboard" class="screen">
+    <div class="eyebrow">GymPro Coach</div>
+    <h2>Tu entrenamiento</h2>
+    <div id="dashCoach" class="banner"></div>
+    <div class="tabs"><button class="tab active" onclick="tab('next',this)">Siguiente</button><button class="tab" onclick="tab('road',this)">Roadmap</button><button class="tab" onclick="tab('track',this)">Progreso</button></div>
+    <div id="tab-next"></div><div id="tab-road" class="hidden"></div><div id="tab-track" class="hidden"></div>
+  </section>
 
-<section id="dashboard" class="screen"><div class="eyebrow">GymPro Coach</div><h2>Tu entrenamiento</h2><div id="dashCoach" class="banner"></div><div class="tabs"><button class="tab active" onclick="tab('next',this)">Siguiente</button><button class="tab" onclick="tab('road',this)">Roadmap</button><button class="tab" onclick="tab('track',this)">Progreso</button></div><div id="tab-next"></div><div id="tab-road" class="hidden"></div><div id="tab-track" class="hidden"></div></section>
+  <section id="tracking" class="screen">
+    <button class="back" onclick="openDashboard()">← Volver</button>
+    <div class="eyebrow">Seguimiento</div>
+    <h2>Tu progreso</h2><p class="muted">No necesitas registrar todo. GymPro trabajará con lo que tengas.</p>
+          <div class="card"><div class="metric"><div><label class="mini">Peso actual (opcional)</label><input id="logWeight" class="input" type="number" step="0.1" placeholder="kg"></div><div><label class="mini">% grasa (opcional)</label><input id="logFat" class="input" type="number" step="0.1" min="1" max="70" placeholder="%"></div></div><div class="actions"><button class="btn primary" onclick="saveMetrics()">Guardar</button></div></div>
+    <div id="metricHistory"></div>
+    <div class="card"><h3>¿Cómo sientes tu progreso?</h3><div class="grid" id="selfCheck"><button class="choice" data-v="worse" onclick="pick('selfCheck',this)">🔴 Voy peor</button><button class="choice" data-v="same" onclick="pick('selfCheck',this)">🟡 Igual</button><button class="choice" data-v="better" onclick="pick('selfCheck',this)">🟢 Voy mejor</button></div><div class="actions"><button class="btn primary" onclick="evaluateCoach()">Evaluar mi fase</button></div></div>
+    <div id="evaluation"></div>
+  </section>
 
-<section id="tracking" class="screen"><button class="back" onclick="openDashboard()">← Volver</button><div class="eyebrow">Seguimiento</div><h2>Tu progreso</h2><p class="muted">No necesitas registrar todo. GymPro trabajará con lo que tengas.</p><div class="card"><div class="metric"><div><label class="mini">Peso actual (opcional)</label><input id="logWeight" class="input" type="number" step="0.1" placeholder="kg"></div><div><label class="mini">% grasa (opcional)</label><input id="logFat" class="input" type="number" step="0.1" min="1" max="70" placeholder="%"></div></div><div class="actions"><button class="btn primary" onclick="saveMetrics()">Guardar</button></div></div><div id="metricHistory"></div><div class="card"><h3>¿Cómo sientes tu progreso?</h3><div class="grid" id="selfCheck"><button class="choice" data-v="worse" onclick="pick('selfCheck',this)">🔴 Voy peor</button><button class="choice" data-v="same" onclick="pick('selfCheck',this)">🟡 Igual</button><button class="choice" data-v="better" onclick="pick('selfCheck',this)">🟢 Voy mejor</button></div><div class="actions"><button class="btn primary" onclick="evaluateCoach()">Evaluar mi fase</button></div></div><div id="evaluation"></div></section>
-
-<div id="subModal" class="modal"><div class="sheet"><button class="back" onclick="closeModal()">✕ Cerrar</button><h2 id="subTitle">Sustituir ejercicio</h2><p class="muted">Elige una alternativa equivalente. El cambio solo afecta a tu plan actual y no alimenta futuras recomendaciones en esta versión.</p><div id="subList" class="list"></div></div></div><div class="footer">GymPro · Tu plan se adapta a tu progreso, no al calendario.</div></div>
+  <div id="subModal" class="modal"><div class="sheet"><button class="back" onclick="closeModal()">✕ Cerrar</button><h2 id="subTitle">Sustituir ejercicio</h2><p class="muted">Elige una alternativa equivalente. El cambio solo afecta a tu plan actual y no alimenta futuras recomendaciones en esta versión.</p><div id="subList" class="list"></div></div></div>
+  <div class="footer">GymPro · Tu plan se adapta a tu progreso, no al calendario.</div>
+</div>
 
 <script>
 const KEY='gympro_v3';const S=JSON.parse(localStorage.getItem(KEY)||'{}');S.phaseState=S.phaseState||{index:0,declines:0,lastRecommendation:0};S.metrics=S.metrics||[];S.completed=S.completed||0;S.nextSession=S.nextSession||1;S.startDate=S.startDate||Date.now();
@@ -215,42 +288,37 @@ const EX=[
 {name:'Hip thrust',m:'glutes',eq:'barbells',alts:['Hip thrust en máquina','Puente de glúteo']},
 {name:'Plancha',m:'core',eq:'bodyweight',alts:['Crunch en polea','Dead bug']}
 ];
+
 function save(){localStorage.setItem(KEY,JSON.stringify(S))}function el(id){return document.getElementById(id)}function show(id,step){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));el(id).classList.add('active');el('bar').style.width=(step>=8?100:step/8*100)+'%';el('resetBtn').classList.toggle('hidden',id==='intro');scrollTo(0,0)}
 function pick(id,node){document.querySelectorAll('#'+id+' .choice').forEach(x=>x.classList.remove('selected'));node.classList.add('selected');S[id]=node.dataset.v;save()}function toggle(id,node){node.classList.toggle('selected');S[id]=[...document.querySelectorAll('#'+id+' .selected')].map(x=>x.dataset.v);save()}function limitPick(id,node,n){const a=S[id]||[];if(node.classList.contains('selected')){node.classList.remove('selected');S[id]=a.filter(x=>x!==node.dataset.v)}else if(a.length<n){node.classList.add('selected');S[id]=[...a,node.dataset.v]}save()}
 function personalNext(){S.age=+el('age').value;S.height=+el('height').value;S.weight=+el('weight').value;if(!S.age||!S.height||!S.weight||!S.sex||!S.physique){el('e1').style.display='block';return}el('e1').style.display='none';show('experience',2)}function expNext(){if(!S.exp){el('e2').style.display='block';return}el('e2').style.display='none';show('goal',3)}function goalPick(node){pick('goals',node);S.goal=node.dataset.v;el('sportBox').classList.toggle('hidden',S.goal!=='sport');save()}function goalNext(){if(!S.goal||(S.goal==='sport'&&!S.sports)){el('e3').style.display='block';return}el('e3').style.display='none';show('config',4)}function configNext(){S.minDays=+S.minDays;S.maxDays=+el('maxDays').value;S.advanced=el('advancedCheck').checked;if(!S.minDays||!S.maxDays||S.maxDays<S.minDays||!S.duration||!S.location){el('e4').style.display='block';return}el('e4').style.display='none';S.advanced?show('advanced',5):finishPlan()}function finishPlan(){S.planCreated=true;save();renderRoadmap();show('roadmap',7)}
 function startPhase(){if(S.goal==='fat')return(['very_thin','thin'].includes(S.physique))?'Recomposición y base muscular':'Pérdida de grasa y acondicionamiento';if(['muscle','bodybuilder'].includes(S.goal))return(['fat','some_fat'].includes(S.physique))?'Acondicionamiento y composición corporal':'Construcción muscular';if(S.goal==='recomp')return'Recomposición';if(S.goal==='athletic')return'Base atlética';if(S.goal==='health')return'Base de condición física';return'Preparación específica para '+sports[S.sports]}
-function phaseNames(){const a=startPhase();if(S.goal==='fat')return[a,'Construcción muscular','Especialización','Objetivo final'];if(S.goal==='muscle')return[a,'Progresión avanzada','Especialización','Objetivo final'];if(S.goal==='bodybuilder')return[a,'Hipertrofia avanzada','Especialización','Objetivo final'];if(S.goal==='recomp')return[a,'Construcción muscular','Especialización','Objetivo final'];if(S.goal==='athletic')return[a,'Fuerza y potencia','Especialización atlética','Objetivo final'];if(S.goal==='health')return[a,'Progresión','Mantenimiento activo','Objetivo final'];return[a,'Desarrollo de capacidades','Especialización deportiva','Objetivo final']}
+function phaseNames(){const a=startPhase();if(S.goal==='fat')return[a,'Construcción muscular','Especialización','Objetivo final'];if(S.goal==='muscle')return[a,'Progresión avanzada','Especialización','Objetivo final'];if(S.goal==='bodybuilder')return[a,'Hipertrofia avanzada','Especialización','Objetivo final'];if(S.goal==='recomp')return[a,'Construcción muscular','Especialización','Objetivo final'];if(S.goal==='athletic')return[a,'Fuerza y potencia','Especialización atlética','Objetivo final'];if(S.goal==='health')return[a,'Progresión','Mantenimiento activo','Objetivo final'];return[a,'Desarrollo de capacidades','Especialización deportistas','Objetivo final']}
 function weeks(){return Math.floor((Date.now()-S.startDate)/604800000)}function coachRecommendation(){const p=S.phaseState.index;const w=weeks();let ready=(p<3)&&(S.completed>=24||w>=10);if(S.selfCheck==='worse')ready=false;let text='';if(ready){text='<span class="tag">RECOMENDACIÓN DEL COACH</span><h3 style="margin-top:10px">Creemos que estás preparado para avanzar</h3><p class="muted">Tu historial muestra suficiente trabajo y/o tiempo en la fase para valorar el siguiente paso. Si sigues rechazándolo, volveremos a proponértelo más adelante.</p><button class="btn primary" onclick="acceptPhase()">Pasar a la siguiente fase</button> <button class="btn secondary" onclick="declinePhase()">Todavía no</button>'}else{text='<span class="tag">COACH</span><h3 style="margin-top:10px">Seguimos construyendo</h3><p class="muted">GymPro seguirá buscando progresión. Si detectamos estancamiento o suficiente trabajo acumulado, revisaremos el estímulo y la siguiente fase.</p>'}return{ready,text}}
 function renderRoadmap(){el('rTitle').textContent=labels[S.goal];el('rIntro').textContent='Tu ruta usa objetivo, punto de partida, experiencia, disponibilidad y preferencias. El IMC no decide por sí solo cuándo avanzas.';el('summary').innerHTML=`<div class="stat"><span>Objetivo</span><b>${labels[S.goal]}${S.goal==='sport'?' · '+sports[S.sports]:''}</b></div><div class="stat"><span>Compromiso</span><b>${S.minDays}–${S.maxDays} sesiones por semana</b></div><div class="stat"><span>Punto de partida</span><b>${phys[S.physique]}</b></div><div class="stat"><span>Experiencia</span><b>${exp[S.exp]}</b></div>`;const ps=phaseNames();el('phases').innerHTML=ps.map((p,i)=>`<div class="phase ${i===S.phaseState.index?'current':'locked'}">${i===S.phaseState.index?'<span class="tag">FASE ACTUAL</span>':i===ps.length-1?'<span class="tag">OBJETIVO</span>':''}<h3>${p}</h3><div class="desc">${i===S.phaseState.index?'La ejecutamos ahora. La estructura se mantiene estable mientras buscamos progresión.':i===ps.length-1?'Es el destino final de esta ruta.':'Se desbloqueará cuando GymPro detecte que estás preparado.'}</div></div>${i<ps.length-1?'<div class="arrow">↓</div>':''}`).join('');const r=coachRecommendation();el('coachMsg').className='banner '+(r.ready?'ok':'');el('coachMsg').innerHTML=r.text}
 function acceptPhase(){S.phaseState.index=Math.min(3,S.phaseState.index+1);S.phaseState.declines=0;S.phaseState.lastRecommendation=Date.now();save();renderRoadmap();renderDashboard()}function declinePhase(){S.phaseState.declines++;S.phaseState.lastRecommendation=Date.now();save();renderRoadmap();renderDashboard()}
-function preferred(m){let c=EX.filter(x=>x.m===m);if(!c.length)return null;const pref=S.equipment||[];c.sort((a,b)=>(pref.includes(b.eq)?1:0)-(pref.includes(a.eq)?1:0));return c[0]}
-function sets(){return S.duration<=45?2:S.duration<=90?3:4}function exerciseFor(m){const x=preferred(m);if(!x)return'';const reps=S.goal==='fat'?'8–12':'6–12';return`<div class="exercise"><div class="row"><div><b>${x.name}</b><div class="sets">${sets()} series · ${reps} reps · deja 1–3 reps en reserva</div></div><button class="smallbtn" onclick="openSub('${encodeURIComponent(x.name)}')">Cambiar</button></div><div class="mini" style="margin-top:7px">Progresión: intenta mejorar peso o repeticiones respecto a tu última sesión con buena técnica.</div></div>`}
+function preferred(m){let c=EX.filter(x=>x.m===m);if(!c.length)return null;const pref=S.equipment||[];c.sort((a,b)=>(pref.includes(b.eq)?1:0)-(pref.includes(a.eq)?1:0));return c}
+    function sets(){return S.duration<=45?2:S.duration<=90?3:4}function exerciseFor(m){const x=preferred(m);if(!x)return'';const reps=S.goal==='fat'?'8–12':'6–12';return`<div class="exercise"><div class="row"><div><b>${x.name}</b><div class="sets">${sets()} series · ${reps} reps · deja 1–3 reps en reserva</div></div><button class="smallbtn" onclick="openSub('${encodeURIComponent(x.name)}')">Cambiar</button></div><div class="mini" style="margin-top:7px">Progresión: intenta mejorar peso o repeticiones respecto a tu última sesión con buena técnica.</div></div>`}
 function sessionMuscles(i){const plans=[['chest','back','legs','shoulders'],['back','legs','chest','arms'],['legs','chest','back','core'],['shoulders','back','glutes','arms'],['legs','chest','shoulders','core'],['back','legs','arms','chest'],['glutes','legs','back','shoulders']];let p=plans[i%plans.length];const pr=S.priority||[];if(pr.length){p=[...pr,...p.filter(x=>!pr.includes(x))].slice(0,4)}return p}
 function workoutList(){let n=S.maxDays||1,min=S.minDays||1,out='';for(let i=0;i<n;i++){const optional=i>=min;out+=`<div class="workout"><div class="whead"><b>Sesión ${i+1}</b><span class="tag">${optional?'EXTRA':'BASE'}</span></div>${sessionMuscles(i).map(exerciseFor).join('')}<div class="exercise"><label class="mini"><input type="checkbox" class="check" onchange="completeExercise(this)"> Marcar esta sesión como realizada</label></div></div>`}return out}
-function openDashboard(){renderDashboard();show('dashboard',8)}function renderDashboard(){el('dashCoach').innerHTML=coachRecommendation().text;tabNext();tabRoad();tabTrack()}function tab(which,node){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));node.classList.add('active');['next','road','track'].forEach(x=>el('tab-'+x).classList.toggle('hidden',x!==which))}function tabNext(){el('tab-next').innerHTML=`<div class="banner"><span class="tag">SIGUIENTE ENTRENAMIENTO</span><h3 style="margin-top:10px">Sesión ${S.nextSession}</h3><p class="muted">No importa qué día sea. Cuando vuelvas, continúa con la siguiente sesión de la semana.</p></div>${workoutList()}`}function tabRoad(){el('tab-road').innerHTML=phaseNames().map((p,i)=>`<div class="phase ${i===S.phaseState.index?'current':'locked'}"><b>${p}</b><div class="desc">${i===S.phaseState.index?'Actual':'Bloqueada'}</div></div>`).join('')}function tabTrack(){el('tab-track').innerHTML=`<div class="card"><b>${S.completed}</b><div class="muted">ejercicios/sesiones registradas</div></div><div class="card"><b>${S.metrics.length}</b><div class="muted">registros corporales</div></div>`}function completeExercise(node){if(node.checked){S.completed++;S.nextSession=(S.nextSession%(S.maxDays||1))+1;S.lastTraining=Date.now();save();tabTrack();el('dashCoach').innerHTML=coachRecommendation().text}}
-let target=null;function openSub(name){target=decodeURIComponent(name);const x=EX.find(e=>e.name===target);el('subTitle').textContent='Cambiar '+target;el('subList').innerHTML=(x?x.alts:[]).map(a=>`<button class="choice" onclick="substitute('${encodeURIComponent(a)}')">${a}</button>`).join('');el('subModal').classList.add('show')}function substitute(a){S.substitutions=S.substitutions||[];S.substitutions.push({from:target,to:decodeURIComponent(a),date:Date.now()});save();closeModal();alert('Cambio guardado. Se mantiene el mismo objetivo del ejercicio y no modifica futuras recomendaciones en esta versión.')}function closeModal(){el('subModal').classList.remove('show')}
-function saveMetrics(){const w=parseFloat(el('logWeight').value),f=parseFloat(el('logFat').value);if(!w&&!f){alert('Introduce al menos un dato.');return}S.metrics.push({date:new Date().toLocaleDateString('es-ES'),weight:w||null,fat:f||null});if(w)S.weight=w;if(f)S.fat=f;save();renderMetrics();el('logWeight').value='';el('logFat').value=''}function renderMetrics(){el('metricHistory').innerHTML=S.metrics.slice().reverse().map(x=>`<div class="card"><b>${x.date}</b><div class="muted">Peso: ${x.weight?x.weight+' kg':'—'} · Grasa: ${x.fat?x.fat+'%':'—'}</div></div>`).join('')||'<p class="muted">Todavía no hay registros.</p>'}function evaluateCoach(){if(!S.selfCheck){alert('Indica cómo sientes tu progreso.');return}save();const r=coachRecommendation();el('evaluation').innerHTML=`<div class="banner ${r.ready?'ok':'warn'}">${r.text}</div>`}
-function resetApp(){if(confirm('¿Borrar el perfil y empezar de nuevo?')){localStorage.removeItem(KEY);location.reload()}}
-if(S.planCreated){renderRoadmap();renderDashboard();show('dashboard',8)}save();
-</script>
-    <script>
-// Arreglo definitivo para el header fijo en iOS con teclado desplegado
-if (window.visualViewport) {
-    const header = document.querySelector('.top');
-    
-    const adjustHeaderForKeyboard = () => {
-        // Calcula cuánto se ha desplazado el lienzo hacia arriba por el teclado
-        const offset = window.visualViewport.offsetTop;
-        // Mueve el header hacia abajo exactamente esa misma distancia para mantenerlo visible
-        header.style.setProperty('--keyboard-offset', `${offset}px`);
-    };
-
-    // Escucha cuando el visor cambia de tamaño o se desplaza (abrir/cerrar teclado)
-    window.visualViewport.addEventListener('resize', adjustHeaderForKeyboard);
-    window.visualViewport.addEventListener('scroll', adjustHeaderForKeyboard);
+function openDashboard(){renderDashboard();show('dashboard',8)}function renderDashboard(){el('dashCoach').innerHTML=coachRecommendation().text;tabNext();tabRoad();tabTrack()}function tab(which,node){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));node.classList.add('active');['next','road','track'].forEach(x=>el('tab-'+x).classList.toggle('hidden',x!==which))}function tabNext(){el('tab-next').innerHTML=`<div class="banner"><span class="tag">SIGUIENTE ENTRENAMIENTO</span><h3 style="margin-top:10px">Sesión ${S.nextSession}</h3><p class="muted">No importa qué día sea. Cuando vuelvas, continúa con la siguiente sesión de la semana.</p></div>${workoutList()}`}function tabRoad(){el('tab-road').innerHTML=phaseNames().map((p,i)=>`<div class="phase ${i===S.phaseState.index?'current':'locked'}"><b>${p}</b><div class="desc">Fase ${i+1}</div></div>`).join('')}
+function tabTrack(){}
+function completeExercise(node) {
+  if(node.checked) {
+    S.completed++;
+    S.nextSession++;
+    save();
+  }
 }
+function resetApp(){localStorage.removeItem(KEY);location.reload()}
+function saveMetrics(){S.metrics.push({date:Date.now(),weight:el('logWeight').value,fat:el('logFat').value});save();renderMetrics()}
+function renderMetrics(){el('metricHistory').innerHTML=S.metrics.map(x=>`<div class="card">Peso: ${x.weight||'-'} kg, Grasa: ${x.fat||'-'}%</div>`).join('')}
+function evaluateCoach(){el('evaluation').innerHTML='<div class="card"><span class="tag">EVALUACIÓN</span><p class="muted">Evaluado con éxito.</p></div>'}
+function openSub(name){el('subModal').classList.add('show')}
+function closeModal(){el('subModal').classList.remove('show')}
 </script>
+</body>
+</html>
 
 
 
-</body></html>
