@@ -142,23 +142,6 @@ h3{
   margin-top:4px;
 }
 
-.previous{
-  font-size:12px;
-  color:#7f8794;
-  text-align:right;
-  line-height:1.45;
-}
-
-.reference-label{
-  color:#68717f;
-  font-size:10px;
-  text-transform:uppercase;
-  letter-spacing:.04em;
-}
-
-.reference-values{
-  color:#7f8794;
-}
 
 .series{
   padding:12px 16px 4px;
@@ -196,6 +179,11 @@ input{
   color:white;
   padding:10px;
   font-size:14px;
+}
+
+input::placeholder{
+  color:#7f8794;
+  opacity:1;
 }
 
 input:focus{
@@ -374,9 +362,6 @@ canvas{
     align-items:flex-start;
   }
 
-  .previous{
-    max-width:130px;
-  }
 
   .series-row{
     grid-template-columns:30px 1fr 1fr 30px;
@@ -843,12 +828,6 @@ function createExerciseHTML(
 
         </div>
 
-        <div
-          class="previous"
-          id="previous-${day}-${index}"
-        >
-          Sin registro
-        </div>
 
       </div>
 
@@ -891,7 +870,9 @@ function createSeriesRow(
   exercise,
   setNumber,
   weight="",
-  reps=""
+  reps="",
+  referenceWeight="",
+  referenceReps=""
 ){
 
   const row =
@@ -910,7 +891,7 @@ function createSeriesRow(
       type="number"
       min="0"
       step="0.5"
-      placeholder="Peso kg"
+      placeholder="${referenceWeight !== "" ? `Peso kg (${escapeHTML(referenceWeight)})` : "Peso kg"}"
       value="${weight}"
       class="weight-input"
       oninput="
@@ -925,7 +906,7 @@ function createSeriesRow(
       type="number"
       min="0"
       step="1"
-      placeholder="Reps"
+      placeholder="${referenceReps !== "" ? `Reps (${escapeHTML(referenceReps)})` : "Reps"}"
       value="${reps}"
       class="reps-input"
       oninput="
@@ -1215,7 +1196,20 @@ function loadPreviousValues(){
 
         container.innerHTML = "";
 
+        const previousExercise =
+          getLastExerciseRecord(exercise[0]);
+
+        const previousSets =
+          previousExercise && Array.isArray(previousExercise.sets)
+            ? previousExercise.sets.filter(set =>
+                set.weight !== "" || set.reps !== ""
+              )
+            : [];
+
         for(let i=0; i<exercise[1]; i++){
+
+          const previousSet =
+            previousSets[i] || {weight:"", reps:""};
 
           container.appendChild(
             createSeriesRow(
@@ -1223,27 +1217,12 @@ function loadPreviousValues(){
               index,
               i+1,
               "",
-              ""
+              "",
+              previousSet.weight ?? "",
+              previousSet.reps ?? ""
             )
           );
 
-        }
-
-        const previous =
-          document.getElementById(`previous-${day}-${index}`);
-
-        const previousExercise =
-          getLastExerciseRecord(exercise[0]);
-
-        if(previousExercise){
-
-          previous.innerHTML =
-            `<span class="reference-label">Referencia</span><br>` +
-            `<span class="reference-values">${escapeHTML(formatReference(previousExercise))}</span>`;
-
-        }else{
-
-          previous.textContent = "Sin registro";
         }
 
         updateExerciseVolume(day,index);
