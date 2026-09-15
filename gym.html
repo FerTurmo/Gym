@@ -186,6 +186,11 @@ input::placeholder{
   opacity:1;
 }
 
+input::placeholder{
+  color:#7f8794;
+  opacity:1;
+}
+
 input:focus{
   outline:none;
   border-color:var(--accent);
@@ -1185,48 +1190,20 @@ function formatReference(exercise){
 function loadPreviousValues(){
 
   for(let day=1; day<=7; day++){
-
-    routine[day].exercises
-      .forEach((exercise,index)=>{
-
-        const container =
-          document.getElementById(`series-${day}-${index}`);
-
-        if(!container) return;
-
-        container.innerHTML = "";
-
-        const previousExercise =
-          getLastExerciseRecord(exercise[0]);
-
-        const previousSets =
-          previousExercise && Array.isArray(previousExercise.sets)
-            ? previousExercise.sets.filter(set =>
-                set.weight !== "" || set.reps !== ""
-              )
-            : [];
-
-        for(let i=0; i<exercise[1]; i++){
-
-          const previousSet =
-            previousSets[i] || {weight:"", reps:""};
-
-          container.appendChild(
-            createSeriesRow(
-              day,
-              index,
-              i+1,
-              "",
-              "",
-              previousSet.weight ?? "",
-              previousSet.reps ?? ""
-            )
-          );
-
-        }
-
-        updateExerciseVolume(day,index);
-      });
+    routine[day].exercises.forEach((exercise,index)=>{
+      const container=document.getElementById(`series-${day}-${index}`);
+      if(!container) return;
+      container.innerHTML="";
+      const previousExercise=getLastExerciseRecord(exercise[0]);
+      const previousSets=previousExercise && Array.isArray(previousExercise.sets)
+        ? previousExercise.sets.filter(set=>set.weight!=="" || set.reps!=="")
+        : [];
+      for(let i=0;i<exercise[1];i++){
+        const previousSet=previousSets[i] || {weight:"",reps:""};
+        container.appendChild(createSeriesRow(day,index,i+1,"","",previousSet.weight ?? "",previousSet.reps ?? ""));
+      }
+      updateExerciseVolume(day,index);
+    });
   }
 
 }
