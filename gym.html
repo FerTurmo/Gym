@@ -144,8 +144,20 @@ h3{
 
 .previous{
   font-size:12px;
-  color:var(--muted);
+  color:#7f8794;
   text-align:right;
+  line-height:1.45;
+}
+
+.reference-label{
+  color:#68717f;
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+.reference-values{
+  color:#7f8794;
 }
 
 .series{
@@ -1139,97 +1151,103 @@ function getLastWorkout(day){
    CARGAR DATOS ANTERIORES
 ========================================================= */
 
+function getLastExerciseRecord(exerciseName){
+
+  const workouts = [...data.workouts]
+    .sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  for(const workout of workouts){
+
+    const exercise = (workout.exercises || [])
+      .find(ex =>
+        ex.name === exerciseName &&
+        Array.isArray(ex.sets) &&
+        ex.sets.some(set =>
+          set.weight !== "" || set.reps !== ""
+        )
+      );
+
+    if(exercise) return exercise;
+  }
+
+  return null;
+}
+
+function escapeHTML(value){
+
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/\"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function formatReference(exercise){
+
+  if(!exercise || !Array.isArray(exercise.sets)){
+    return "";
+  }
+
+  return exercise.sets
+    .filter(set =>
+      set.weight !== "" || set.reps !== ""
+    )
+    .map(set => {
+      const weight = set.weight !== "" ? `${set.weight} kg` : "— kg";
+      const reps = set.reps !== "" ? `${set.reps} reps` : "— reps";
+      return `${weight} × ${reps}`;
+    })
+    .join(" · ");
+}
+
 function loadPreviousValues(){
 
   for(let day=1; day<=7; day++){
-
-    const last =
-      getLastWorkout(day);
 
     routine[day].exercises
       .forEach((exercise,index)=>{
 
         const container =
-          document.getElementById(
-            `series-${day}-${index}`
-          );
+          document.getElementById(`series-${day}-${index}`);
 
         if(!container) return;
 
         container.innerHTML = "";
 
-        const previousExercise =
-          last &&
-          last.exercises &&
-          last.exercises[index];
-
-        let sets;
-
-        if(
-          previousExercise &&
-          Array.isArray(
-            previousExercise.sets
-          )
-        ){
-
-          sets =
-            previousExercise.sets;
-
-        }else{
-
-          sets =
-            Array(exercise[1])
-              .fill(null)
-              .map(()=>({
-                weight:"",
-                reps:""
-              }));
-
-        }
-
-        sets.forEach((set,i)=>{
+        for(let i=0; i<exercise[1]; i++){
 
           container.appendChild(
             createSeriesRow(
               day,
               index,
               i+1,
-              set.weight ?? "",
-              set.reps ?? ""
+              "",
+              ""
             )
           );
 
-        });
+        }
 
         const previous =
-          document.getElementById(
-            `previous-${day}-${index}`
-          );
+          document.getElementById(`previous-${day}-${index}`);
+
+        const previousExercise =
+          getLastExerciseRecord(exercise[0]);
 
         if(previousExercise){
 
-          const volume =
-            calculateExerciseVolume(
-              previousExercise
-            );
-
-          previous.textContent =
-            `Anterior: ${formatNumber(volume)} kg`;
+          previous.innerHTML =
+            `<span class="reference-label">Referencia</span><br>` +
+            `<span class="reference-values">${escapeHTML(formatReference(previousExercise))}</span>`;
 
         }else{
 
-          previous.textContent =
-            "Sin registro";
-
+          previous.textContent = "Sin registro";
         }
 
-        updateExerciseVolume(
-          day,
-          index
-        );
-
+        updateExerciseVolume(day,index);
       });
-
   }
 
 }
@@ -1336,6 +1354,9 @@ function saveWorkout(){
   updateHistory();
 
   populateExerciseSelector();
+
+  renderDays();
+  showDay(currentDay);
 
   showMessage(
     "✅ Entrenamiento guardado correctamente."
@@ -1528,10 +1549,11 @@ function resetCurrentWorkout(){
     return;
   }
 
-  loadPreviousValues();
+  renderDays();
+  showDay(currentDay);
 
   showMessage(
-    "Sesión restaurada."
+    "Sesión restaurada: campos vacíos y referencias actualizadas."
   );
 
 }
