@@ -1,0 +1,69 @@
+name: Fix Gym reference inputs
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update gym.html
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('gym.html')
+          text = path.read_text(encoding='utf-8')
+
+          old_css = '''.previous{\n  font-size:12px;\n  color:var(--muted);\n  text-align:right;\n}'''
+          new_css = '''.previous{\n  font-size:12px;\n  color:#7f8794;\n  text-align:right;\n  line-height:1.45;\n}\n\n.reference-label{\n  color:#68717f;\n  font-size:10px;\n  text-transform:uppercase;\n  letter-spacing:.04em;\n}\n\n.reference-values{\n  color:#7f8794;\n}'''
+          if old_css not in text:
+              raise SystemExit('CSS target not found')
+          text = text.replace(old_css, new_css, 1)
+
+          old_load = '''function loadPreviousValues(){\n\n  for(let day=1; day<=7; day++){\n\n    const last =\n      getLastWorkout(day);\n\n    routine[day].exercises\n      .forEach((exercise,index)=>{\n\n        const container =\n          document.getElementById(\n            `series-${day}-${index}`\n          );\n\n        if(!container) return;\n\n        container.innerHTML = "";\n\n        const previousExercise =\n          last &&\n          last.exercises &&\n          last.exercises[index];\n\n        let sets;\n\n        if(\n          previousExercise &&\n          Array.isArray(\n            previousExercise.sets\n          )\n        ){\n\n          sets =\n            previousExercise.sets;\n\n        }else{\n\n          sets =\n            Array(exercise[1])\n              .fill(null)\n              .map(()=>({\n                weight:"",\n                reps:""\n              }));\n\n        }\n\n        sets.forEach((set,i)=>{\n\n          container.appendChild(\n            createSeriesRow(\n              day,\n              index,\n              i+1,\n              set.weight ?? "",\n              set.reps ?? ""\n            )\n          );\n\n        });\n\n        const previous =\n          document.getElementById(\n            `previous-${day}-${index}`\n          );\n\n        if(previousExercise){\n\n          const volume =\n            calculateExerciseVolume(\n              previousExercise\n            );\n\n          previous.textContent =\n            `Anterior: ${formatNumber(volume)} kg`;\n\n        }else{\n\n          previous.textContent =\n            "Sin registro";\n\n        }\n\n        updateExerciseVolume(\n          day,\n          index\n        );\n\n      });\n\n  }\n\n}'''
+
+          new_load = '''function getLastExerciseRecord(exerciseName){\n\n  const workouts = [...data.workouts]\n    .sort((a,b)=>new Date(b.date)-new Date(a.date));\n\n  for(const workout of workouts){\n\n    const exercise = (workout.exercises || [])\n      .find(ex =>\n        ex.name === exerciseName &&\n        Array.isArray(ex.sets) &&\n        ex.sets.some(set =>\n          set.weight !== "" || set.reps !== ""\n        )\n      );\n\n    if(exercise) return exercise;\n  }\n\n  return null;\n}\n\nfunction escapeHTML(value){\n\n  return String(value)\n    .replace(/&/g,"&amp;")\n    .replace(/</g,"&lt;")\n    .replace(/>/g,"&gt;")\n    .replace(/\\\"/g,"&quot;")\n    .replace(/'/g,"&#039;");\n}\n\nfunction formatReference(exercise){\n\n  if(!exercise || !Array.isArray(exercise.sets)){\n    return "";\n  }\n\n  return exercise.sets\n    .filter(set =>\n      set.weight !== "" || set.reps !== ""\n    )\n    .map(set => {\n      const weight = set.weight !== "" ? `${set.weight} kg` : "— kg";\n      const reps = set.reps !== "" ? `${set.reps} reps` : "— reps";\n      return `${weight} × ${reps}`;\n    })\n    .join(" · ");\n}\n\nfunction loadPreviousValues(){\n\n  for(let day=1; day<=7; day++){\n\n    routine[day].exercises\n      .forEach((exercise,index)=>{\n\n        const container =\n          document.getElementById(`series-${day}-${index}`);\n\n        if(!container) return;\n\n        container.innerHTML = "";\n\n        for(let i=0; i<exercise[1]; i++){\n\n          container.appendChild(\n            createSeriesRow(\n              day,\n              index,\n              i+1,\n              "",\n              ""\n            )\n          );\n\n        }\n\n        const previous =\n          document.getElementById(`previous-${day}-${index}`);\n\n        const previousExercise =\n          getLastExerciseRecord(exercise[0]);\n\n        if(previousExercise){\n\n          previous.innerHTML =\n            `<span class="reference-label">Referencia</span><br>` +\n            `<span class="reference-values">${escapeHTML(formatReference(previousExercise))}</span>`;\n\n        }else{\n\n          previous.textContent = "Sin registro";\n        }\n\n        updateExerciseVolume(day,index);\n      });\n  }\n\n}'''
+
+          if old_load not in text:
+              raise SystemExit('loadPreviousValues target not found')
+          text = text.replace(old_load, new_load, 1)
+
+          old_save_tail = '''  data.workouts.push(\n    workout\n  );\n\n  saveData();\n\n  updateSummary();\n\n  updateHistory();\n\n  populateExerciseSelector();\n\n  showMessage(\n    "✅ Entrenamiento guardado correctamente."\n  );'''
+          new_save_tail = '''  data.workouts.push(\n    workout\n  );\n\n  saveData();\n\n  updateSummary();\n\n  updateHistory();\n\n  populateExerciseSelector();\n\n  renderDays();\n  showDay(currentDay);\n\n  showMessage(\n    "✅ Entrenamiento guardado correctamente."\n  );'''
+          if old_save_tail not in text:
+              raise SystemExit('saveWorkout target not found')
+          text = text.replace(old_save_tail, new_save_tail, 1)
+
+          old_reset = '''  loadPreviousValues();\n\n  showMessage(\n    "Sesión restaurada."\n  );'''
+          new_reset = '''  renderDays();\n  showDay(currentDay);\n\n  showMessage(\n    "Sesión restaurada: campos vacíos y referencias actualizadas."\n  );'''
+          if old_reset not in text:
+              raise SystemExit('resetCurrentWorkout target not found')
+          text = text.replace(old_reset, new_reset, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          rm -f .github/workflows/fix-gym-reference.yml
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add gym.html .github/workflows/fix-gym-reference.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Fix gym previous values as references"
+          git push
