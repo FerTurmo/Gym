@@ -15,34 +15,23 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Update gym.html
-        shell: python
         run: |
+          python3 <<'PY'
           from pathlib import Path
           import re
 
           p = Path('gym.html')
           s = p.read_text(encoding='utf-8')
 
-          # Remove the separate reference block from the exercise header.
-          s = re.sub(
-              r'\n\s*<div class="previous" id="previous-\$\{day\}-\$\{index\}">Sin registro</div>',
-              '',
-              s,
-              count=1
-          )
-
-          # Remove the old reference-only CSS and make placeholders clearly muted.
+          s = re.sub(r'\n\s*<div class="previous" id="previous-\$\{day\}-\$\{index\}">Sin registro</div>', '', s, count=1)
           s = re.sub(r'\n\.previous\{.*?\n\}\n', '\n', s, count=1, flags=re.S)
           s = re.sub(r'\n\.reference-label\{.*?\n\}\n', '\n', s, count=1, flags=re.S)
           s = re.sub(r'\n\.reference-values\{.*?\n\}\n', '\n', s, count=1, flags=re.S)
           s = re.sub(r'\n\s*\.previous\{\n\s*max-width:130px;\n\s*\}\n', '\n', s, count=1)
 
           if 'input::placeholder' not in s:
-              marker = '''input{\n  width:100%;'''
-              s = s.replace(marker, '''input::placeholder{\n  color:#7f8794;\n  opacity:1;\n}\n\ninput{\n  width:100%;''', 1)
+              s = s.replace('input{\n  width:100%;', 'input::placeholder{\n  color:#7f8794;\n  opacity:1;\n}\n\ninput{\n  width:100%;', 1)
 
-          # Replace createSeriesRow with a version that accepts reference values
-          # and puts them directly into the editable inputs as placeholders.
           pattern = r'function createSeriesRow\(.*?\n\}\n\nfunction addSeries'
           replacement = '''function createSeriesRow(day,index,setNumber,weight="",reps="",referenceWeight="",referenceReps=""){
   const weightPlaceholder = referenceWeight !== "" ? `Peso kg (${referenceWeight})` : "Peso kg";
@@ -59,58 +48,40 @@ jobs:
 }
 
 function addSeries'''
-          new_s, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          s, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit('Could not find createSeriesRow block')
-          s = new_s
 
-          # Replace loadPreviousValues so inputs are blank while the most recent
-          # actual exercise values are shown as placeholders. Omitted sessions
-          # do not erase the reference because getLastExerciseRecord() is used.
           pattern = r'function loadPreviousValues\(\)\{.*?\n\}\n\nfunction saveWorkout'
           replacement = '''function loadPreviousValues(){
   for(let day=1; day<=7; day++){
     routine[day].exercises.forEach((exercise,index)=>{
       const container = document.getElementById(`series-${day}-${index}`);
       if(!container) return;
-
       container.innerHTML = "";
-
       const previousExercise = getLastExerciseRecord(exercise[0]);
       const previousSets = previousExercise && Array.isArray(previousExercise.sets)
         ? previousExercise.sets.filter(set => set.weight !== "" || set.reps !== "")
         : [];
-
       for(let i=0; i<exercise[1]; i++){
         const previousSet = previousSets[i] || {weight:"", reps:""};
-        container.appendChild(
-          createSeriesRow(
-            day,
-            index,
-            i + 1,
-            "",
-            "",
-            previousSet.weight ?? "",
-            previousSet.reps ?? ""
-          )
-        );
+        container.appendChild(createSeriesRow(
+          day,index,i+1,"","",previousSet.weight ?? "",previousSet.reps ?? ""
+        ));
       }
-
       updateExerciseVolume(day,index);
     });
   }
 }
 
 function saveWorkout'''
-          new_s, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          s, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit('Could not find loadPreviousValues block')
-          s = new_s
 
-          # Remove any JS that still tries to populate the old header reference.
           s = re.sub(r'\n\s*const previousBox = document\.getElementById\(`previous-\$\{day\}-\$\{index\}`\);.*?\n\s*\}\n', '\n', s, count=1, flags=re.S)
-
           p.write_text(s, encoding='utf-8')
+          PY
 
       - name: Commit changes and remove temporary workflow
         run: |
@@ -119,6 +90,5 @@ function saveWorkout'''
           git rm .github/workflows/update-reference-placeholders.yml
           git add gym.html
           git diff --cached --check
-          git diff --cached -- gym.html
           git commit -m "fix: show previous values as input placeholders"
           git push
