@@ -1,0 +1,43 @@
+name: Apply GymPro first-machine guidance
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update GymPro
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('GymPro.html')
+          s = p.read_text(encoding='utf-8')
+          old = "if(!h){const w=initialWeight(x);return{weight:w,reps:p.lo,reason:'Primera referencia; GymPro ajustará la carga con tu histórico real.'}}"
+          new = "if(!h){return{weight:'',reps:p.lo,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
+          if old not in s:
+              raise SystemExit('Expected recommendation code was not found')
+          s = s.replace(old, new, 1)
+          old2 = "const r=recommendation(x);const rows=d.sets.slice(0,n).map((s,i)=>"
+          new2 = "const r=recommendation(x);const first=!exerciseHistory(x);const rows=d.sets.slice(0,n).map((s,i)=>"
+          if old2 not in s:
+              raise SystemExit('Expected exercise rendering code was not found')
+          s = s.replace(old2, new2, 1)
+          old3 = "</div><div class=\"setlog\"><div class=\"mini\" style=\"display:grid;grid-template-columns:34px 1fr 1fr;gap:8px\"><span>Serie</span>"
+          new3 = "</div>${first?'<div class=\"banner\" style=\"margin-top:10px\"><b>Primera vez en esta máquina</b><div class=\"mini\" style=\"margin-top:5px\">Pon un peso con el que te sientas cómodo y creas que puedes hacer el número de repeticiones indicado. Es mejor ser conservador y subir poco a poco el peso. GymPro utilizará tu rendimiento para ajustar las próximas sesiones.</div></div>':''}<div class=\"setlog\"><div class=\"mini\" style=\"display:grid;grid-template-columns:34px 1fr 1fr;gap:8px\"><span>Serie</span>"
+          if old3 not in s:
+              raise SystemExit('Expected set log markup was not found')
+          s = s.replace(old3, new3, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add GymPro.html
+          git commit -m "Improve first-time machine guidance"
+          git push
