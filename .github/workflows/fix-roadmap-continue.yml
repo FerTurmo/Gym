@@ -1,4 +1,4 @@
-name: Fix roadmap continue
+name: Move progress tracking into training
 on:
   push:
     paths:
@@ -17,10 +17,16 @@ jobs:
           from pathlib import Path
           p=Path('GymPro.html')
           s=p.read_text(encoding='utf-8')
-          old="const r=coachRecommendation();el('coachMsg').className='banner '+(r.ready?'ok':'');el('coachMsg').innerHTML=r.text"
-          if old not in s:
-              raise SystemExit('Target roadmap coach block not found')
-          s=s.replace(old,'',1)
+          old1="<div class=\"actions\"><button class=\"btn primary\" onclick=\"openDashboard()\">Ir a mi entrenamiento</button><button class=\"btn secondary\" onclick=\"show('tracking',8);renderMetrics()\">Seguimiento</button></div>"
+          new1="<div class=\"actions\"><button class=\"btn primary\" onclick=\"openDashboard()\">Ir a mi entrenamiento</button></div>"
+          old2="<button class=\"tab\" onclick=\"tab('track',this)\">Progreso</button>"
+          new2="<button class=\"tab\" onclick=\"show('tracking',8);renderMetrics()\">Progreso</button>"
+          if old1 not in s:
+              raise SystemExit('Roadmap tracking button not found')
+          if old2 not in s:
+              raise SystemExit('Dashboard progress button not found')
+          s=s.replace(old1,new1,1)
+          s=s.replace(old2,new2,1)
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit
@@ -29,5 +35,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add GymPro.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Fix Continue button on config screen'
+          git commit -m 'Move progress tracking into training'
           git push
