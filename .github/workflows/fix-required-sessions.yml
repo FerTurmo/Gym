@@ -11,48 +11,17 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Patch weekly session model
+      - name: Fix session generation
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('GymPro.html')
           s=p.read_text()
-
-          # Remove a previous misplaced global call, if present.
-          s=s.replace('\ngpApplyWeeklySessionModel();', '')
-
-          # Ensure the normalization helper exists.
-          if 'function gpApplyWeeklySessionModel()' not in s:
-              marker='function finishConfig()'
-              start=s.find(marker)
-              if start<0: raise SystemExit('finishConfig not found')
-              brace=s.find('{',start)
-              depth=0; close=-1
-              for i in range(brace,len(s)):
-                  if s[i]=='{': depth+=1
-                  elif s[i]=='}':
-                      depth-=1
-                      if depth==0: close=i+1; break
-              helper='''\nfunction gpApplyWeeklySessionModel(){\n  const selected=Number(S.maxDays||S.minDays||1);\n  S.minDays=Math.max(1,Math.min(7,selected));\n  S.maxDays=7;\n}\n'''
-              s=s[:close]+helper+s[close:]
-
-          # Find finishConfig and put the model application INSIDE it, immediately
-          # before its closing brace. This means it runs only after the user saves
-          # their selected training frequency.
-          marker='function finishConfig()'
-          start=s.find(marker)
-          if start<0: raise SystemExit('finishConfig not found')
-          brace=s.find('{',start)
-          depth=0; close=-1
-          for i in range(brace,len(s)):
-              if s[i]=='{': depth+=1
-              elif s[i]=='}':
-                  depth-=1
-                  if depth==0: close=i; break
-          if close<0: raise SystemExit('finishConfig closing brace not found')
-          before=s[:close]
-          if 'gpApplyWeeklySessionModel();' not in before[start:close]:
-              s=s[:close]+'gpApplyWeeklySessionModel();'+s[close:]
+          old='function workoutList(){let n=S.maxDays||1,min=S.minDays||1,Ss=S.sessionStatus||{};'
+          new='function workoutList(){let n=7,min=Number(S.maxDays||S.minDays||1),Ss=S.sessionStatus||{};'
+          if old not in s:
+              raise SystemExit('Expected workoutList pattern not found')
+          s=s.replace(old,new,1)
           p.write_text(s)
           PY
       - name: Commit fix
