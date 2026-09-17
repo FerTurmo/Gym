@@ -1,0 +1,38 @@
+name: Fix weekly progress labels
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-week-progress-labels.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch weekly history labels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('GymPro.html')
+          s=p.read_text(encoding='utf-8')
+          reps={
+            "const record={id:'w_'+Date.now(),date:Date.now(),sessionNumber:sessionIndex+1,phase:S.phaseState.index,goal:S.goal,exercises};":"const record={id:'w_'+Date.now(),date:Date.now(),weekNumber:S.gpCurrentWeek||1,sessionNumber:sessionIndex+1,phase:S.phaseState.index,goal:S.goal,exercises};",
+            "exerciseMap[key].rows.push({session:wi+1,date:w.date,maxWeight,volume:exVolume,reps:sets.reduce((a,s)=>a+(+s.reps),0)});":"exerciseMap[key].rows.push({session:w.sessionNumber||wi+1,week:w.weekNumber||1,date:w.date,maxWeight,volume:exVolume,reps:sets.reduce((a,s)=>a+(+s.reps),0)});",
+            "<b>Sesión ${workouts.length-i} · ${new Date(w.date).toLocaleDateString('es-ES')}</b>":"<b>Semana ${w.weekNumber||1} · S${w.sessionNumber||workouts.length-i} · ${new Date(w.date).toLocaleDateString('es-ES')}</b>",
+            "r.map(x=>`S${x.session}: ${fmtKg(x.maxWeight)} kg`).join(' → ')":"r.map(x=>`W${x.week} S${x.session}: ${fmtKg(x.maxWeight)} kg`).join(' → ')"
+          }
+          for a,b in reps.items():
+              if a not in s: raise SystemExit('Missing target: '+a)
+              s=s.replace(a,b,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Label progress history by week and session'
+          git push
