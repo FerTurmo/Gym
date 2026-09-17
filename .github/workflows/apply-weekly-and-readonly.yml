@@ -1,0 +1,51 @@
+name: Apply weekly session UX
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-weekly-and-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch GymPro
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('GymPro.html')
+          s=p.read_text(encoding='utf-8')
+          needle='</body>'
+          patch=r'''<style>
+          .gp-week-field{margin:18px 0}.gp-week-field label{display:block;font-weight:750;margin-bottom:9px}.gp-week-days{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.gp-week-day{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;padding:13px;text-align:left;cursor:pointer;min-height:52px}.gp-week-day.selected{border-color:var(--accent);background:#2b2418}.gp-week-readonly{padding:10px 12px;border:1px solid var(--ok);background:#12271d;color:var(--ok);border-radius:10px;font-size:12px;font-weight:800;margin:10px 0}.gp-session-pill.completed{cursor:pointer}.gp-session-workout.gp-readonly .setinput{opacity:.9}.gp-session-workout.gp-readonly button,.gp-session-workout.gp-readonly input[type=checkbox]{opacity:.7;cursor:default}
+          </style>
+          <script>
+          (function(){
+            const N=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],J=[1,2,3,4,5,6,0];
+            function st(){window.S=window.S||{};return window.S}
+            function save(){try{if(window.save)window.save();else localStorage.setItem('gympro',JSON.stringify(S))}catch(e){}}
+            function inject(){const s=st(),ss=[...document.querySelectorAll('.screen')],screen=ss.find(x=>/d[ií]as|sesiones/.test(x.textContent||'')&&/semana/.test(x.textContent||''));if(!screen||screen.querySelector('.gp-week-field'))return;const a=[...screen.querySelectorAll('.field')].find(x=>/d[ií]as|sesiones/.test(x.textContent||'')&&/semana/.test(x.textContent||''));if(!a)return;const f=document.createElement('div');f.className='gp-week-field';f.innerHTML='<label>¿Qué día quieres que empiece tu semana de entrenamiento?</label><div class="gp-week-days">'+N.map((n,i)=>'<button type="button" class="gp-week-day" data-day="'+J[i]+'">'+n+'</button>').join('')+'</div><div class="hint">Cada semana comenzará ese día, y tus recomendaciones se actualizarán teniendo en cuenta lo que hayas hecho la semana anterior.</div>';a.after(f);const cur=Number.isInteger(s.weekStartDay)?s.weekStartDay:1;f.querySelectorAll('.gp-week-day').forEach(b=>{if(+b.dataset.day===cur)b.classList.add('selected');b.addEventListener('click',()=>{f.querySelectorAll('.gp-week-day').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');s.weekStartDay=+b.dataset.day;s.weekStart=+b.dataset.day;save()})});if(!Number.isInteger(s.weekStartDay)){s.weekStartDay=1;s.weekStart=1;save()}}
+            function week(){const s=st();if(!s.weekStartDate)return 1;const a=new Date(s.weekStartDate+'T12:00:00'),now=new Date(),start=Number.isInteger(s.weekStartDay)?s.weekStartDay:1,bound=new Date(a);bound.setDate(a.getDate()+(start-a.getDay()+7)%7);return now<bound?1:2+Math.floor((now-bound)/604800000)}
+            function rotate(){const s=st();if(!s.weekStartDate||!Array.isArray(s.sessionStatus))return;const w=week(),seen=Number(s.gpCurrentWeek||1);if(w===seen)return;s.gpWeekArchive=s.gpWeekArchive||{};s.gpWeekArchive[seen]={status:[...s.sessionStatus],completedAt:new Date().toISOString()};s.sessionStatus=[];s.gpCurrentWeek=w;save();if(typeof window.renderDashboard==='function')setTimeout(()=>window.renderDashboard(),0)}
+            function lock(){const p=document.querySelector('.gp-session-pill.selected'),w=document.querySelector('.gp-session-workout');if(!p||!w)return;const done=p.classList.contains('completed');w.classList.toggle('gp-readonly',done);w.querySelectorAll('input').forEach(x=>{if(x.classList.contains('setinput')||x.type==='checkbox'){x.disabled=done;x.readOnly=done}});w.querySelectorAll('button').forEach(x=>x.disabled=done);let n=w.querySelector('.gp-week-readonly');if(done){if(!n){n=document.createElement('div');n.className='gp-week-readonly';n.textContent='Sesión completada · solo lectura';w.prepend(n)}}else if(n)n.remove()}
+            function wrap(){if(window.__gpWeekWrapped||typeof window.configNext!=='function')return;const o=window.configNext;window.configNext=function(){const s=st();if(!Number.isInteger(s.weekStartDay)){s.weekStartDay=1;s.weekStart=1}if(!s.weekStartDate){s.weekStartDate=new Date().toISOString().slice(0,10);s.gpCurrentWeek=1;s.sessionStatus=[]}save();return o.apply(this,arguments)};window.__gpWeekWrapped=true}
+            function events(){document.addEventListener('click',e=>{const p=e.target.closest('.gp-session-pill');if(!p)return;const ps=[...document.querySelectorAll('.gp-session-pill')],i=ps.indexOf(p);if(p.classList.contains('completed')&&typeof window.selectSession==='function'&&i>=0)setTimeout(()=>{try{window.selectSession(i)}catch(_){}} ,0);setTimeout(lock,30)},true)}
+            function boot(){inject();wrap();rotate();lock();events();const t=document.getElementById('app')||document.body;new MutationObserver(()=>{inject();wrap();lock()}).observe(t,{subtree:true,childList:true});setInterval(()=>{inject();wrap();rotate();lock()},1500)}
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+          })();
+          </script>
+          '''
+          if patch not in s:
+              s=s.replace(needle,patch+needle,1)
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add weekly start day and read-only completed sessions'
+          git push
