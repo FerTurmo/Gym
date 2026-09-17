@@ -11,7 +11,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Patch session classification
+      - name: Inspect and patch
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -23,15 +23,21 @@ jobs:
           if start<0: raise SystemExit('workoutList not found')
           if end<0: end=len(s)
           block=s[start:end]
-          old=block
-          block=re.sub(r"i<2(?=\?['\"]required)", "i<Number(S.minDays||2)", block)
-          block=re.sub(r"i===0&&['\"]required['\"]|i===0\?['\"]required['\"]", "i<Number(S.minDays||2)?'required'", block)
-          if block==old:
-            print('NO_CHANGE')
-            print(block[:5000])
-            raise SystemExit(2)
-          s=s[:start]+block+s[end:]
-          p.write_text(s)
+          print('--- WORKOUTLIST ---')
+          print(block)
+          print('--- END ---')
+          patterns=[r"i<2",r"i===0",r"required",r"optional",r"minDays"]
+          for pat in patterns:
+            print(pat, re.findall(r'.{0,100}'+pat+r'.{0,180}', block))
+          # The intended rule is simple: the first S.minDays sessions are required.
+          new=block
+          new=re.sub(r"i<2", "i<Number(S.minDays||2)", new)
+          new=re.sub(r"i===0", "i<Number(S.minDays||2)", new)
+          if new==block:
+            print('NO DIRECT MATCH; leaving file unchanged')
+          else:
+            s=s[:start]+new+s[end:]
+            p.write_text(s)
           PY
       - name: Commit fix
         run: |
