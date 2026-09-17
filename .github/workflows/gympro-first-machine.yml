@@ -43,6 +43,11 @@ jobs:
           if css not in s and marker in s:
               s = s.replace(marker, css + marker, 1)
 
+          # Fix the existing UI patch in-place. The old patch was still rewriting
+          # the tab to "Entrenamiento →", so merely changing the workflow script
+          # was not enough because the old script was already embedded in GymPro.
+          s = s.replace("if(b.textContent.trim()==='Siguiente'){b.textContent='Entrenamiento →';}", "var t=b.textContent.trim();if(t==='Siguiente'||t==='Entrenamiento →'){b.textContent='Entrenamiento';}", 1)
+
           script_marker = '</body>'
           script = '''<script>(function(){function polishGymProUI(){document.querySelectorAll('button').forEach(function(b){var t=b.textContent.trim();if(t==='Siguiente'||t==='Entrenamiento →'){b.textContent='Entrenamiento';}});document.querySelectorAll('.tabs').forEach(function(t){var items=Array.from(t.children);var rank=function(el){var x=el.textContent.trim();return x==='Entrenamiento' || x==='Entrenamiento →'?0:x==='Roadmap'?1:x==='Progreso'?2:99};items.sort(function(a,b){return rank(a)-rank(b)}).forEach(function(el){t.appendChild(el)});});document.querySelectorAll('.workout').forEach(function(w){if(w.dataset.gpCollapsible==='1')return;var h=w.querySelector(':scope > .whead');if(!h)return;w.dataset.gpCollapsible='1';w.classList.add('gp-collapsed');h.addEventListener('click',function(e){if(e.target.closest('button,input,a,label'))return;w.classList.toggle('gp-collapsed');});});}polishGymProUI();new MutationObserver(polishGymProUI).observe(document.body,{childList:true,subtree:true});})();</script>'''
           if 'polishGymProUI' not in s and script_marker in s:
@@ -57,6 +62,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No GymPro changes needed"
           else
-            git commit -m "Remove arrow from GymPro training tab"
+            git commit -m "Fix GymPro training tab label"
             git push
           fi
