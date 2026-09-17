@@ -1,0 +1,69 @@
+name: Update GymPro 7-session model
+on:
+  push:
+    paths:
+      - '.github/workflows/update-7-sessions-model.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply 7-session model
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('GymPro.html')
+          s = p.read_text(encoding='utf-8')
+
+          replacements = [
+            (
+              '<label>Sesiones mínimas por semana</label>',
+              '<label>¿Cuántos días quieres entrenar a la semana?</label>'
+            ),
+            (
+              '<div class="field"><label>Sesiones máximas por semana</label><select id="maxDays" class="input"><option value="">Selecciona</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select><div class="hint">No asignamos rutinas a lunes/martes. Son sesiones en la semana. Las sesiones extra son opcionales.</div></div>',
+              '<div class="hint" style="margin-top:-4px;margin-bottom:18px">Ese será el número de sesiones obligatorias. Además, tendrás sesiones opcionales hasta completar 7 sesiones en total.</div>'
+            ),
+            (
+              '<div id="e4" class="error">Completa los datos necesarios. El máximo no puede ser menor que el mínimo.</div>',
+              '<div id="e4" class="error">Completa los datos necesarios.</div>'
+            ),
+            (
+              "function configNext(){S.minDays=+S.minDays;S.maxDays=+el('maxDays').value;S.advanced=el('advancedCheck').checked;if(!S.minDays||!S.maxDays||S.maxDays<S.minDays||!S.duration||!S.location){el('e4').style.display='block';return}el('e4').style.display='none';S.advanced?show('advanced',5):finishPlan()}",
+              "function configNext(){S.minDays=Number(S.minDays);S.maxDays=7;S.advanced=el('advancedCheck').checked;if(!Number.isInteger(S.minDays)||S.minDays<1||S.minDays>7||!S.duration||!S.location){el('e4').style.display='block';return}el('e4').style.display='none';save();S.advanced?show('advanced',5):finishPlan() }"
+            ),
+            (
+              "<b>${S.minDays}–${S.maxDays} sesiones por semana</b>",
+              "<b>${S.minDays} obligatorias + opcionales hasta 7</b>"
+            ),
+            (
+              "function workoutList(){let n=7,min=Number(S.maxDays||S.minDays||1),Ss=S.sessionStatus||{};",
+              "function workoutList(){let n=7,min=Math.max(1,Math.min(7,Number(S.minDays)||1)),Ss=S.sessionStatus||{};"
+            ),
+            (
+              "S.nextSession=(S.nextSession%(S.maxDays||1))+1;",
+              "S.nextSession=(S.nextSession%7)+1;"
+            ),
+            (
+              "const S=JSON.parse(localStorage.getItem(KEY)||'{}');S.phaseState=",
+              "const S=JSON.parse(localStorage.getItem(KEY)||'{}');S.maxDays=7;S.phaseState="
+            ),
+          ]
+
+          for old, new in replacements:
+              if old not in s:
+                  raise SystemExit(f'Missing expected text: {old[:100]}')
+              s = s.replace(old, new, 1)
+
+          # Make the hint explain the mandatory/optional model and remove the old max-days wording if any remains.
+          p.write_text(s, encoding='utf-8')
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.html
+          git diff --cached --quiet || git commit -m 'Simplify weekly sessions to 7 total with optional extras'
+          git push
