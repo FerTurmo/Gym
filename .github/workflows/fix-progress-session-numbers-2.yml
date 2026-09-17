@@ -1,0 +1,36 @@
+name: Fix GymPro progress session labels
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-progress-session-numbers-2.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch labels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('GymPro.html')
+          s=p.read_text(encoding='utf-8')
+          old='session:w.sessionNumber||wi+1'
+          if old in s:
+              s=s.replace(old,'session:wi+1',1)
+          old2="<b>Sesión ${w.sessionNumber||'?'} · ${new Date(w.date).toLocaleDateString('es-ES')}</b>"
+          new2="<b>Sesión ${workouts.length-i} · ${new Date(w.date).toLocaleDateString('es-ES')}</b>"
+          if old2 in s:
+              s=s.replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix chronological progress session labels'
+          git push
