@@ -1,9 +1,9 @@
 name: Inspect GymPro
 on:
-  workflow_dispatch:
   push:
     paths:
       - '.github/workflows/inspect-gympro.yml'
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -11,21 +11,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Format inspection copy
+      - name: Extract structure
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
           s=Path('GymPro.html').read_text(encoding='utf-8')
-          s=s.replace('><','>\\n<')
-          s=re.sub(r'<script>(.*?)</script>', lambda m:'<script>\\n'+m.group(1).replace(';',';\\n')+'\\n</script>', s, flags=re.S)
-          Path('GymPro.inspect.html').write_text(s,encoding='utf-8')
+          pats=['function configNext','function renderDashboard','function selectSession','function completeExercise','sessionStatus','workoutHistory','minDays','maxDays','weekStart','renderSession','sessionNav']
+          out=[f'LEN={len(s)}']
+          for p in pats:
+            out.append(f'### {p}')
+            m=re.search(re.escape(p),s)
+            if m:
+              a=max(0,m.start()-350);b=min(len(s),m.start()+900)
+              out.append(s[a:b])
+            else: out.append('NOT FOUND')
+          Path('GymPro.inspect.txt').write_text('\n\n'.join(out),encoding='utf-8')
           PY
-      - name: Commit inspection copy
+      - name: Commit inspection
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add GymPro.inspect.html
+          git add GymPro.inspect.txt
           git diff --cached --quiet && exit 0
-          git commit -m 'Inspect GymPro source'
+          git commit -m 'Inspect GymPro structure'
           git push
