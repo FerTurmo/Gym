@@ -18,17 +18,36 @@ jobs:
           from pathlib import Path
           p = Path('GymPro.html')
           s = p.read_text(encoding='utf-8')
+
           old = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x);if(!h){return{weight:'',reps:p.lo,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
-          new = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x),hasHistory=Array.isArray(S.workoutHistory)&&S.workoutHistory.length>0;if(!hasHistory){return{weight:'',reps:p.lo,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
+          new = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x),hasHistory=Array.isArray(S.workoutHistory)&&S.workoutHistory.length>0;if(!hasHistory){return{weight:'',reps:p.hi,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
           if old in s:
               s = s.replace(old, new, 1)
+
+          old = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x),hasHistory=Array.isArray(S.workoutHistory)&&S.workoutHistory.length>0;if(!hasHistory){return{weight:'',reps:p.lo,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
+          new = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x),hasHistory=Array.isArray(S.workoutHistory)&&S.workoutHistory.length>0;if(!hasHistory){return{weight:'',reps:p.hi,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
+          if old in s:
+              s = s.replace(old, new, 1)
+
           old2 = "const first=!exerciseHistory(x);"
           new2 = "const first=!Array.isArray(S.workoutHistory)||!S.workoutHistory.length;"
           if old2 in s:
               s = s.replace(old2, new2, 1)
+
           old3 = "<div class=\"prescription\">${rule.kind==='compound'?'Ejercicio compuesto':rule.kind==='isolation'?'Ejercicio de aislamiento':'Trabajo de estabilidad'} · objetivo: ${labels[S.goal]}</div>"
           if old3 in s:
               s = s.replace(old3, '', 1)
+
+          marker = '</style></head>'
+          css = '.workout.gp-collapsed>.exercise{display:none!important}.workout .whead{cursor:pointer}.workout.gp-collapsed .whead:after{content:\"›\";font-size:20px;color:var(--muted);margin-left:auto}.workout:not(.gp-collapsed) .whead:after{content:\"⌄\";font-size:18px;color:var(--muted);margin-left:auto}'
+          if css not in s and marker in s:
+              s = s.replace(marker, css + marker, 1)
+
+          script_marker = '</body>'
+          script = '''<script>(function(){function polishGymProUI(){document.querySelectorAll('button').forEach(function(b){if(b.textContent.trim()==='Siguiente'){b.textContent='Entrenamiento';}});document.querySelectorAll('.tabs').forEach(function(t){var items=Array.from(t.children);var rank=function(el){var x=el.textContent.trim();return x==='Entrenamiento'?0:x==='Roadmap'?1:x==='Progreso'?2:99};items.sort(function(a,b){return rank(a)-rank(b)}).forEach(function(el){t.appendChild(el)});});document.querySelectorAll('.workout').forEach(function(w){if(w.dataset.gpCollapsible==='1')return;var h=w.querySelector(':scope > .whead');if(!h)return;w.dataset.gpCollapsible='1';w.classList.add('gp-collapsed');h.addEventListener('click',function(e){if(e.target.closest('button,input,a,label'))return;w.classList.toggle('gp-collapsed');});});}polishGymProUI();new MutationObserver(polishGymProUI).observe(document.body,{childList:true,subtree:true});})();</script>'''
+          if 'gp-collapsed' not in s and script_marker in s:
+              s = s.replace(script_marker, script + script_marker, 1)
+
           p.write_text(s, encoding='utf-8')
       - name: Commit changes
         run: |
@@ -38,6 +57,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No GymPro changes needed"
           else
-            git commit -m "Remove per-exercise goal comments"
+            git commit -m "Improve GymPro training navigation and session cards"
             git push
           fi
