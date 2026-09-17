@@ -1,0 +1,42 @@
+name: Update GymPro progress
+on:
+  push:
+    paths:
+      - '.github/workflows/update-progress.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch GymPro progress
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('GymPro.html')
+          s=p.read_text(encoding='utf-8')
+
+          old_markup='''<div id="metricHistory"></div><div class="card"><h3>¿Cómo sientes tu progreso?</h3><div class="grid" id="selfCheck"><button class="choice" data-v="worse" onclick="pick('selfCheck',this)">🔴 Voy peor</button><button class="choice" data-v="same" onclick="pick('selfCheck',this)">🟡 Igual</button><button class="choice" data-v="better" onclick="pick('selfCheck',this)">🟢 Voy mejor</button></div><div class="actions"><button class="btn primary" onclick="evaluateCoach()">Evaluar mi fase</button></div></div><div id="evaluation"></div>'''
+          new_markup='''<div id="metricHistory"></div><div id="workoutProgress"></div>'''
+          if old_markup not in s:
+              raise SystemExit('Progress markup target not found')
+          s=s.replace(old_markup,new_markup,1)
+
+          old_fn="""function renderMetrics(){el('metricHistory').innerHTML=S.metrics.slice().reverse().map(x=>`<div class=\"card\"><b>${x.date}</b><div class=\"muted\">Peso: ${x.weight?x.weight+' kg':'—'} · Grasa: ${x.fat?x.fat+'%':'—'}</div></div>`).join('')||'<p class=\"muted\">Todavía no hay registros.</p>'}function evaluateCoach(){if(!S.selfCheck){alert('Indica cómo sientes tu progreso.');return}save();const r=coachRecommendation();el('evaluation').innerHTML=`<div class=\"banner ${r.ready?'ok':'warn'}\">${r.text}</div>`}"""
+          new_fn="""function renderMetrics(){el('metricHistory').innerHTML=S.metrics.slice().reverse().map(x=>`<div class=\"card\"><b>${x.date}</b><div class=\"muted\">Peso: ${x.weight?x.weight+' kg':'—'} · Grasa: ${x.fat?x.fat+'%':'—'}</div></div>`).join('')||'<p class=\"muted\">Todavía no hay registros.</p>';renderProgress()}function renderProgress(){const workouts=S.workoutHistory||[];const validSets=w=>((w.exercises||[]).flatMap(e=>e.sets||[]).filter(s=>Number.isFinite(+s.weight)&&Number.isFinite(+s.reps)&&+s.weight>=0&&+s.reps>0));const volume=w=>validSets(w).reduce((a,s)=>a+(+s.weight*+s.reps),0);const totalVolume=workouts.reduce((a,w)=>a+volume(w),0);const exerciseMap={};workouts.forEach((w,wi)=>{(w.exercises||[]).forEach(e=>{const sets=(e.sets||[]).filter(s=>Number.isFinite(+s.weight)&&Number.isFinite(+s.reps)&&+s.weight>=0&&+s.reps>0);if(!sets.length)return;const key=e.exerciseId||e.exerciseName;exerciseMap[key]=exerciseMap[key]||{id:key,name:e.exerciseName,rows:[]};const maxWeight=Math.max(...sets.map(s=>+s.weight));const exVolume=sets.reduce((a,s)=>a+(+s.weight*+s.reps),0);exerciseMap[key].rows.push({session:w.sessionNumber||wi+1,date:w.date,maxWeight,volume:exVolume,reps:sets.reduce((a,s)=>a+(+s.reps),0)});});});const exercises=Object.values(exerciseMap);const fmtKg=v=>Number.isInteger(v)?v.toLocaleString('es-ES'):(Math.round(v*10)/10).toLocaleString('es-ES');const fmtVol=v=>Math.round(v).toLocaleString('es-ES');const firstWeight=a=>a.length?a[0].maxWeight:0;const lastWeight=a=>a.length?a[a.length-1].maxWeight:0;const delta=(a)=>a.length>1?lastWeight(a)-firstWeight(a):0;const sessionCards=workouts.slice().reverse().map((w,i)=>{const v=volume(w),sets=validSets(w).length;return `<div class=\"historybox\"><div class=\"row\"><b>Sesión ${w.sessionNumber||'?'} · ${new Date(w.date).toLocaleDateString('es-ES')}</b><b>${fmtVol(v)} kg</b></div><div class=\"mini\" style=\"margin-top:5px\">${sets} series · ${((w.exercises||[]).filter(e=>(e.sets||[]).some(s=>Number.isFinite(+s.weight)&&Number.isFinite(+s.reps))).length)} máquinas registradas</div></div>`}).join('');const machineCards=exercises.map(e=>{const r=e.rows;const weights=r.map(x=>x.maxWeight);const d=delta(r);const sign=d>0?'+':d<0?'−':'';const sessionLine=r.map(x=>`S${x.session}: ${fmtKg(x.maxWeight)} kg`).join(' → ');return `<div class=\"historybox\"><div class=\"row\"><b>${e.name}</b><span class=\"tag\">${r.length} sesiones</span></div><div class=\"mini\" style=\"margin-top:7px;line-height:1.6\">${sessionLine}</div><div class=\"mini\" style=\"margin-top:6px\">Volumen registrado: ${fmtVol(r.reduce((a,x)=>a+x.volume,0))} kg${d!==0?` · Evolución de carga: ${sign}${fmtKg(Math.abs(d))} kg`:''}</div></div>`}).join('');el('workoutProgress').innerHTML=`<div class=\"card\"><h3>Entrenamiento acumulado</h3><div class=\"metric\"><div class=\"stat\"><span>Sesiones completadas</span><b>${workouts.length}</b></div><div class=\"stat\"><span>Volumen total</span><b>${fmtVol(totalVolume)} kg</b></div></div></div>${workouts.length?`<div class=\"card\"><h3>Evolución por máquina</h3><p class=\"muted\">Aquí puedes ver cómo ha cambiado la carga y cuánto trabajo has acumulado en cada ejercicio.</p>${machineCards||'<p class=\"muted\">Todavía no hay cargas registradas.</p>'}</div><div class=\"card\"><h3>Volumen por sesión</h3><p class=\"muted\">Peso × repeticiones de todas las series con carga registrada.</p>${sessionCards}</div>`:'<div class=\"card\"><h3>Histórico de entrenamiento</h3><p class=\"muted\">Cuando completes tu primera sesión, aquí aparecerán tu evolución de cargas y el volumen total movido.</p></div>'}`}"""
+          if old_fn not in s:
+              raise SystemExit('renderMetrics target not found')
+          s=s.replace(old_fn,new_fn,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Improve GymPro progress tracking'
+          git push
