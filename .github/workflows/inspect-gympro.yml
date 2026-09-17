@@ -1,0 +1,31 @@
+name: Inspect GymPro
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/inspect-gympro.yml'
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Format inspection copy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('GymPro.html').read_text(encoding='utf-8')
+          s=s.replace('><','>\\n<')
+          s=re.sub(r'<script>(.*?)</script>', lambda m:'<script>\\n'+m.group(1).replace(';',';\\n')+'\\n</script>', s, flags=re.S)
+          Path('GymPro.inspect.html').write_text(s,encoding='utf-8')
+          PY
+      - name: Commit inspection copy
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.inspect.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Inspect GymPro source'
+          git push
