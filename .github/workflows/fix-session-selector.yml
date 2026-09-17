@@ -1,0 +1,39 @@
+name: Fix GymPro session selector
+on:
+  push:
+    branches: [main]
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix session navigation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('GymPro.html')
+          s=p.read_text(encoding='utf-8')
+          old="function workoutList(){let n=S.maxDays||1,min=S.minDays||1,Ss=S.sessionStatus||{};S.sessionStatus=Ss;let nav='<div class=\"gp-session-nav\" aria-label=\"Sesiones de la semana\">';for(let i=0;i<n;i++){const optional=i>=min,done=!!Ss[i],cls=done?'completed':optional?'optional':'required';nav+=`<button type=\"button\" class=\"gp-session-pill ${cls}\" data-session=\"${i}\" onclick=\"selectSession(${i})\">S.${i+1}</button>`}nav+='</div><div id=\"gp-session-content\"></div>';return nav}"
+          new="function workoutList(){let n=S.maxDays||1,min=S.minDays||1,Ss=S.sessionStatus||{};S.sessionStatus=Ss;let nav='<div class=\"gp-session-nav\" aria-label=\"Sesiones de la semana\">';for(let i=0;i<n;i++){const optional=i>=min,done=!!Ss[i],cls=done?'completed':optional?'optional':'required';nav+=`<button type=\"button\" class=\"gp-session-pill ${cls}\" data-session=\"${i}\">S.${i+1}</button>`}nav+='</div><div id=\"gp-session-content\"></div>';return nav}"
+          if old not in s:
+              raise SystemExit('workoutList source not found')
+          s=s.replace(old,new,1)
+          old2="function tabNext(){el('tab-next').innerHTML=`<div class=\"banner\"><span class=\"tag\">SIGUIENTE ENTRENAMIENTO</span><h3 style=\"margin-top:10px\">Sesión ${S.nextSession}</h3><p class=\"muted\">Completa el peso y las repeticiones que hagas en cada serie.</p></div>${workoutList()}`;selectSession((S.nextSession||1)-1)}"
+          new2="function tabNext(){el('tab-next').innerHTML=`<div class=\"banner\"><span class=\"tag\">SIGUIENTE ENTRENAMIENTO</span><h3 style=\"margin-top:10px\">Sesión ${S.nextSession}</h3><p class=\"muted\">Completa el peso y las repeticiones que hagas en cada serie.</p></div>${workoutList()}`;document.querySelectorAll('.gp-session-pill').forEach(function(b){b.addEventListener('click',function(){selectSession(Number(b.dataset.session));});});selectSession((S.nextSession||1)-1)}"
+          if old2 not in s:
+              raise SystemExit('tabNext source not found')
+          s=s.replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix GymPro session selector'
+          git push
