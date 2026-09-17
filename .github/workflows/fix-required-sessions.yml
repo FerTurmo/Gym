@@ -18,41 +18,41 @@ jobs:
           p=Path('GymPro.html')
           s=p.read_text()
 
-          # The selected number of training days is the required number.
-          # GymPro should always expose up to 7 sessions, with any sessions
-          # above the selected number marked optional.
-          marker='function finishConfig()'
-          start=s.find(marker)
-          if start<0:
-              raise SystemExit('finishConfig not found')
-          end=s.find('function ',start+10)
-          if end<0:
-              raise SystemExit('Could not find end of finishConfig')
-          block=s[start:end]
+          # Remove a previous misplaced global call, if present.
+          s=s.replace('\ngpApplyWeeklySessionModel();', '')
 
-          if 'GP_WEEKLY_SESSION_MODEL' not in block:
-              block += '''\n// GP_WEEKLY_SESSION_MODEL\n// The user's selected training frequency is the number of mandatory sessions.\n// The weekly selector always offers seven slots; sessions above the selected\n// frequency are optional and never block weekly progression.\nfunction gpApplyWeeklySessionModel(){\n  const selected=Number(S.maxDays||S.minDays||1);\n  S.minDays=Math.max(1,Math.min(7,selected));\n  S.maxDays=7;\n}\n'''
-              s=s[:start]+block+s[end:]
-
-          # Inject the normalization immediately after the existing config save.
-          # This avoids changing any of the existing onboarding UI/selection code.
-          if 'gpApplyWeeklySessionModel();' not in s:
-              target='function finishConfig()'
-              pos=s.find(target)
-              brace=s.find('{',pos)
-              depth=0
-              close=-1
+          # Ensure the normalization helper exists.
+          if 'function gpApplyWeeklySessionModel()' not in s:
+              marker='function finishConfig()'
+              start=s.find(marker)
+              if start<0: raise SystemExit('finishConfig not found')
+              brace=s.find('{',start)
+              depth=0; close=-1
               for i in range(brace,len(s)):
                   if s[i]=='{': depth+=1
                   elif s[i]=='}':
                       depth-=1
-                      if depth==0:
-                          close=i+1
-                          break
-              if close<0:
-                  raise SystemExit('finishConfig closing brace not found')
-              s=s[:close]+"\ngpApplyWeeklySessionModel();"+s[close:]
+                      if depth==0: close=i+1; break
+              helper='''\nfunction gpApplyWeeklySessionModel(){\n  const selected=Number(S.maxDays||S.minDays||1);\n  S.minDays=Math.max(1,Math.min(7,selected));\n  S.maxDays=7;\n}\n'''
+              s=s[:close]+helper+s[close:]
 
+          # Find finishConfig and put the model application INSIDE it, immediately
+          # before its closing brace. This means it runs only after the user saves
+          # their selected training frequency.
+          marker='function finishConfig()'
+          start=s.find(marker)
+          if start<0: raise SystemExit('finishConfig not found')
+          brace=s.find('{',start)
+          depth=0; close=-1
+          for i in range(brace,len(s)):
+              if s[i]=='{': depth+=1
+              elif s[i]=='}':
+                  depth-=1
+                  if depth==0: close=i; break
+          if close<0: raise SystemExit('finishConfig closing brace not found')
+          before=s[:close]
+          if 'gpApplyWeeklySessionModel();' not in before[start:close]:
+              s=s[:close]+'gpApplyWeeklySessionModel();'+s[close:]
           p.write_text(s)
           PY
       - name: Commit fix
