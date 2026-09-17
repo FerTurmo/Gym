@@ -1,0 +1,37 @@
+name: Fix GymPro progress sessions
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-progress-session-numbers.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch session numbering
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('GymPro.html')
+          s=p.read_text(encoding='utf-8')
+          old="exerciseMap[key].rows.push({session:w.sessionNumber||wi+1,date:w.date,maxWeight,volume:exVolume,reps:sets.reduce((a,s)=>a+(+s.reps),0)})"
+          new="exerciseMap[key].rows.push({session:wi+1,date:w.date,maxWeight,volume:exVolume,reps:sets.reduce((a,s)=>a+(+s.reps),0)})"
+          if old not in s: raise SystemExit('Machine session numbering target not found')
+          s=s.replace(old,new,1)
+          old2="const sessionCards=workouts.slice().reverse().map((w,i)=>{const v=volume(w),sets=validSets(w).length;return `<div class=\\\"historybox\\\"><div class=\\\"row\\\"><b>Sesión ${w.sessionNumber||'?'} · ${new Date(w.date).toLocaleDateString('es-ES')}</b>"
+          new2="const sessionCards=workouts.slice().reverse().map((w,i)=>{const v=volume(w),sets=validSets(w).length;const globalSession=workouts.length-i;return `<div class=\\\"historybox\\\"><div class=\\\"row\\\"><b>Sesión ${globalSession} · ${new Date(w.date).toLocaleDateString('es-ES')}</b>"
+          if old2 not in s: raise SystemExit('Session history numbering target not found')
+          s=s.replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Use chronological session numbers in progress'
+          git push
