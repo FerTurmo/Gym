@@ -16,52 +16,15 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          p = Path('GymPro.html')
-          s = p.read_text(encoding='utf-8')
-
-          old = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x);if(!h){return{weight:'',reps:p.lo,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
-          new = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x),hasHistory=Array.isArray(S.workoutHistory)&&S.workoutHistory.length>0;if(!hasHistory){return{weight:'',reps:p.hi,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
-          if old in s:
-              s = s.replace(old, new, 1)
-
-          old = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x),hasHistory=Array.isArray(S.workoutHistory)&&S.workoutHistory.length>0;if(!hasHistory){return{weight:'',reps:p.lo,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
-          new = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x),hasHistory=Array.isArray(S.workoutHistory)&&S.workoutHistory.length>0;if(!hasHistory){return{weight:'',reps:p.hi,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
-          if old in s:
-              s = s.replace(old, new, 1)
-
-          old2 = "const first=!exerciseHistory(x);"
-          new2 = "const first=!Array.isArray(S.workoutHistory)||!S.workoutHistory.length;"
-          if old2 in s:
-              s = s.replace(old2, new2, 1)
-
-          old3 = "<div class=\"prescription\">${rule.kind==='compound'?'Ejercicio compuesto':rule.kind==='isolation'?'Ejercicio de aislamiento':'Trabajo de estabilidad'} · objetivo: ${labels[S.goal]}</div>"
-          if old3 in s:
-              s = s.replace(old3, '', 1)
-
-          marker = '</style></head>'
-          css = '.workout.gp-collapsed>.exercise{display:none!important}.workout .whead{cursor:pointer}.workout.gp-collapsed .whead:after{content:\"›\";font-size:20px;color:var(--muted);margin-left:auto}.workout:not(.gp-collapsed) .whead:after{content:\"⌄\";font-size:18px;color:var(--muted);margin-left:auto}'
-          if css not in s and marker in s:
-              s = s.replace(marker, css + marker, 1)
-
-          # Fix the existing UI patch in-place. The old patch was still rewriting
-          # the tab to "Entrenamiento →", so merely changing the workflow script
-          # was not enough because the old script was already embedded in GymPro.
-          s = s.replace("if(b.textContent.trim()==='Siguiente'){b.textContent='Entrenamiento →';}", "var t=b.textContent.trim();if(t==='Siguiente'||t==='Entrenamiento →'){b.textContent='Entrenamiento';}", 1)
-
-          script_marker = '</body>'
-          script = '''<script>(function(){function polishGymProUI(){document.querySelectorAll('button').forEach(function(b){var t=b.textContent.trim();if(t==='Siguiente'||t==='Entrenamiento →'){b.textContent='Entrenamiento';}});document.querySelectorAll('.tabs').forEach(function(t){var items=Array.from(t.children);var rank=function(el){var x=el.textContent.trim();return x==='Entrenamiento' || x==='Entrenamiento →'?0:x==='Roadmap'?1:x==='Progreso'?2:99};items.sort(function(a,b){return rank(a)-rank(b)}).forEach(function(el){t.appendChild(el)});});document.querySelectorAll('.workout').forEach(function(w){if(w.dataset.gpCollapsible==='1')return;var h=w.querySelector(':scope > .whead');if(!h)return;w.dataset.gpCollapsible='1';w.classList.add('gp-collapsed');h.addEventListener('click',function(e){if(e.target.closest('button,input,a,label'))return;w.classList.toggle('gp-collapsed');});});}polishGymProUI();new MutationObserver(polishGymProUI).observe(document.body,{childList:true,subtree:true});})();</script>'''
-          if 'polishGymProUI' not in s and script_marker in s:
-              s = s.replace(script_marker, script + script_marker, 1)
-
-          p.write_text(s, encoding='utf-8')
+          p=Path('GymPro.html');s=p.read_text(encoding='utf-8')
+          s=s.replace("if(b.textContent.trim()==='Siguiente'){b.textContent='Entrenamiento →';}","var t=b.textContent.trim();if(t==='Siguiente'||t==='Entrenamiento →'){b.textContent='Entrenamiento';}",1)
+          marker='</head>'
+          css='<style id="gp-session-selector">.gp-session-nav{display:flex;gap:8px;overflow-x:auto;padding:3px 1px 8px;margin:12px 0 4px;scrollbar-width:none}.gp-session-nav::-webkit-scrollbar{display:none}.gp-session-pill{flex:0 0 auto;min-width:64px;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:850;cursor:pointer;text-align:center}.gp-session-pill.required{border-color:var(--accent);color:var(--accent);background:#2b2418}.gp-session-pill.optional{border-color:var(--line);color:var(--muted);background:var(--card2)}.gp-session-pill.completed{border-color:var(--ok);background:#12271d;color:var(--ok)}.gp-session-pill.selected{box-shadow:0 0 0 2px var(--text) inset}.gp-session-pill small{display:block;font-size:9px;margin-top:3px;opacity:.8}.gp-session-workout .whead:after{display:none!important}</style>'
+          if 'id="gp-session-selector"' not in s:s=s.replace(marker,css+marker,1)
+          script='''<script id="gp-session-ui">(function(){window.selectGymProSession=function(i){S.selectedSession=i;save();tabNext();};window.workoutList=function(){var n=S.maxDays||1,min=S.minDays||1,i=Number.isFinite(+S.selectedSession)?+S.selectedSession:Math.max(0,(S.nextSession||1)-1);i=Math.max(0,Math.min(n-1,i));S.selectedSession=i;var nav='';for(var j=0;j<n;j++){var opt=j>=min,done=Array.isArray(S.workoutHistory)&&S.workoutHistory.some(function(h){return +h.sessionNumber===j+1;});var c='gp-session-pill '+(done?'completed':opt?'optional':'required')+(j===i?' selected':'');nav+='<button class="'+c+'" onclick="selectGymProSession('+j+')">'+(done?'✓ ':'')+'Sesión '+(j+1)+'<small>'+(done?'COMPLETADA':opt?'OPCIONAL':'OBLIGATORIA')+'</small></button>'}return '<div class="gp-session-nav">'+nav+'</div><div class="workout gp-session-workout"><div class="whead"><b>Sesión '+(i+1)+'</b><span class="tag">'+(i>=min?'OPCIONAL':'OBLIGATORIA')+'</span></div>'+sessionMuscles(i).map(function(m){return exerciseFor(m,i)}).join('')+'<div class="exercise"><label class="mini"><input type="checkbox" class="check" onchange="completeExercise(this,'+i+')"> Marcar esta sesión como realizada</label></div></div>'};if('id="gp-session-ui"' not in s)s=s.replace('</body>',script+'</body>',1);p.write_text(s,encoding='utf-8')
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add GymPro.html
-          if git diff --cached --quiet; then
-            echo "No GymPro changes needed"
-          else
-            git commit -m "Fix GymPro training tab label"
-            git push
-          fi
+          if git diff --cached --quiet; then echo "No GymPro changes needed"; else git commit -m "Improve GymPro session selector"; git push; fi
