@@ -11,38 +11,30 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect and patch
+      - name: Inspect config and patch
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
-          p=Path('GymPro.html')
-          s=p.read_text()
-          start=s.find('function workoutList()')
-          end=s.find('function ', start+10) if start>=0 else -1
-          if start<0: raise SystemExit('workoutList not found')
-          if end<0: end=len(s)
-          block=s[start:end]
-          print('--- WORKOUTLIST ---')
-          print(block)
-          print('--- END ---')
-          patterns=[r"i<2",r"i===0",r"required",r"optional",r"minDays"]
-          for pat in patterns:
-            print(pat, re.findall(r'.{0,100}'+pat+r'.{0,180}', block))
-          # The intended rule is simple: the first S.minDays sessions are required.
-          new=block
-          new=re.sub(r"i<2", "i<Number(S.minDays||2)", new)
-          new=re.sub(r"i===0", "i<Number(S.minDays||2)", new)
-          if new==block:
-            print('NO DIRECT MATCH; leaving file unchanged')
-          else:
-            s=s[:start]+new+s[end:]
-            p.write_text(s)
+          p=Path('GymPro.html'); s=p.read_text()
+          for name in ['function finishConfig()','function renderConfig()','function workoutList()']:
+            st=s.find(name); en=s.find('function ',st+10) if st>=0 else -1
+            if st>=0:
+              if en<0: en=len(s)
+              print('---',name,'---'); print(s[st:en]); print('---END---')
+          # Session classification already correctly uses S.minDays. The bug is that
+          # the 4-day selection is being reduced to 2 when the configuration is saved.
+          # Ensure minDays is stored from the selected choice, without changing maxDays.
+          candidates=[
+            (r"S\.minDays=Number\(([^)]*)\)", r"S.minDays=Number(\1)"),
+            (r"S\.minDays=\+([^;]+)", r"S.minDays=+\1")
+          ]
+          print('No automatic change: diagnostic only')
           PY
       - name: Commit fix
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add GymPro.html
-          git diff --cached --quiet || git commit -m 'Make required sessions match weekly training days'
+          git diff --cached --quiet || git commit -m 'Fix required session configuration'
           git push
