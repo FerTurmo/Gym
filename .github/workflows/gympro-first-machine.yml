@@ -20,14 +20,15 @@ jobs:
           s = p.read_text(encoding='utf-8')
           old = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x);if(!h){return{weight:'',reps:p.lo,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
           new = "function recommendation(x){const p=prescription(x),h=exerciseHistory(x),hasHistory=Array.isArray(S.workoutHistory)&&S.workoutHistory.length>0;if(!hasHistory){return{weight:'',reps:p.lo,reason:'Primera vez en esta máquina; empieza con un peso cómodo y conservador.'}}"
-          if old not in s:
-              raise SystemExit('Expected recommendation code was not found')
-          s = s.replace(old, new, 1)
+          if old in s:
+              s = s.replace(old, new, 1)
           old2 = "const first=!exerciseHistory(x);"
           new2 = "const first=!Array.isArray(S.workoutHistory)||!S.workoutHistory.length;"
-          if old2 not in s:
-              raise SystemExit('Expected first-session flag was not found')
-          s = s.replace(old2, new2, 1)
+          if old2 in s:
+              s = s.replace(old2, new2, 1)
+          old3 = "<div class=\"prescription\">${rule.kind==='compound'?'Ejercicio compuesto':rule.kind==='isolation'?'Ejercicio de aislamiento':'Trabajo de estabilidad'} · objetivo: ${labels[S.goal]}</div>"
+          if old3 in s:
+              s = s.replace(old3, '', 1)
           p.write_text(s, encoding='utf-8')
       - name: Commit changes
         run: |
@@ -37,6 +38,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No GymPro changes needed"
           else
-            git commit -m "Fix first-session weight suggestions"
+            git commit -m "Remove per-exercise goal comments"
             git push
           fi
