@@ -1,4 +1,4 @@
-name: Apply GymPro first-machine guidance
+name: Clean GymPro UI
 
 on:
   push:
@@ -12,21 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update GymPro
+      - name: Clean temporary session selector code
         shell: python
         run: |
           from pathlib import Path
-          p=Path('GymPro.html');s=p.read_text(encoding='utf-8')
+          import re
+          p=Path('GymPro.html')
+          s=p.read_text(encoding='utf-8')
+          s=re.sub(r'<style id="gp-session-selector">.*?</style>','',s,flags=re.S)
+          s=re.sub(r'<script id="gp-session-ui">.*?</script>','',s,flags=re.S)
           s=s.replace("if(b.textContent.trim()==='Siguiente'){b.textContent='Entrenamiento →';}","var t=b.textContent.trim();if(t==='Siguiente'||t==='Entrenamiento →'){b.textContent='Entrenamiento';}",1)
-          if 'id="gp-session-selector"' not in s:
-              css='<style id="gp-session-selector">.gp-session-nav{display:flex;gap:8px;overflow-x:auto;padding:3px 1px 8px;margin:12px 0 4px;scrollbar-width:none}.gp-session-nav::-webkit-scrollbar{display:none}.gp-session-pill{flex:0 0 auto;min-width:64px;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:850;cursor:pointer;text-align:center}.gp-session-pill.required{border-color:var(--accent);color:var(--accent);background:#2b2418}.gp-session-pill.optional{border-color:var(--line);color:var(--muted);background:var(--card2)}.gp-session-pill.completed{border-color:var(--ok);background:#12271d;color:var(--ok)}.gp-session-pill.selected{box-shadow:0 0 0 2px var(--text) inset}.gp-session-pill small{display:block;font-size:9px;margin-top:3px;opacity:.8}.gp-session-workout .whead:after{display:none!important}</style>'
-              s=s.replace('</head>',css+'</head>',1)
-              script="""<script id="gp-session-ui">(function(){window.selectGymProSession=function(i){S.selectedSession=i;save();tabNext();};window.workoutList=function(){var n=S.maxDays||1,min=S.minDays||1,i=Number.isFinite(+S.selectedSession)?+S.selectedSession:Math.max(0,(S.nextSession||1)-1);i=Math.max(0,Math.min(n-1,i));S.selectedSession=i;var nav='';for(var j=0;j<n;j++){var opt=j>=min,done=Array.isArray(S.workoutHistory)&&S.workoutHistory.some(function(h){return +h.sessionNumber===j+1;});var c='gp-session-pill '+(done?'completed':opt?'optional':'required')+(j===i?' selected':'');nav+='<button class=\"'+c+'\" onclick=\"selectGymProSession('+j+')\">'+(done?'✓ ':'')+'Sesión '+(j+1)+'<small>'+(done?'COMPLETADA':opt?'OPCIONAL':'OBLIGATORIA')+'</small></button>'}return '<div class=\"gp-session-nav\">'+nav+'</div><div class=\"workout gp-session-workout\"><div class=\"whead\"><b>Sesión '+(i+1)+'</b><span class=\"tag\">'+(i>=min?'OPCIONAL':'OBLIGATORIA')+'</span></div>'+sessionMuscles(i).map(function(m){return exerciseFor(m,i)}).join('')+'<div class=\"exercise\"><label class=\"mini\"><input type=\"checkbox\" class=\"check\" onchange=\"completeExercise(this,'+i+')\"> Marcar esta sesión como realizada</label></div></div>'};})();</script>"""
-              s=s.replace('</body>',script+'</body>',1)
           p.write_text(s,encoding='utf-8')
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add GymPro.html
-          if git diff --cached --quiet; then echo "No GymPro changes needed"; else git commit -m "Improve GymPro session selector"; git push; fi
+          if git diff --cached --quiet; then echo "No GymPro changes needed"; else git commit -m "Clean broken GymPro session selector"; git push; fi
