@@ -1,0 +1,42 @@
+name: Apply GymPro session navigation
+on:
+  push:
+    branches: [main]
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply horizontal session navigation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('GymPro.html')
+          s=p.read_text()
+          old="function workoutList(){let n=S.maxDays||1,min=S.minDays||1,out='';for(let i=0;i<n;i++){const optional=i>=min;out+=`<div class=\"workout\" data-session-index=\"${i}\"><div class=\"whead\"><b>Sesión ${i+1}</b><span class=\"tag\">${optional?'EXTRA':'BASE'}</span></div>${sessionMuscles(i).map(m=>exerciseFor(m,i)).join('')}<div class=\"exercise\"><label class=\"mini\"><input type=\"checkbox\" class=\"check\" onchange=\"completeExercise(this,${i})\"> Marcar esta sesión como realizada</label></div></div>`}return out}"
+          new="function workoutList(){let n=S.maxDays||1,min=S.minDays||1,Ss=S.sessionStatus||{};S.sessionStatus=Ss;let nav='<div class=\"gp-session-nav\" aria-label=\"Sesiones de la semana\">';for(let i=0;i<n;i++){const optional=i>=min,done=!!Ss[i],cls=done?'completed':optional?'optional':'required';nav+=`<button type=\"button\" class=\"gp-session-pill ${cls}\" data-session=\"${i}\" onclick=\"selectSession(${i})\">${i+1}<small>${done?'COMPLETADA':optional?'OPCIONAL':'OBLIGATORIA'}</small></button>`}nav+='</div><div id=\"gp-session-content\"></div>';return nav}function selectSession(i){const c=el('gp-session-content');if(!c)return;document.querySelectorAll('.gp-session-pill').forEach(b=>b.classList.toggle('selected',+b.dataset.session===i));let min=S.minDays||1,optional=i>=min; c.innerHTML=`<div class=\"workout gp-session-workout\" data-session-index=\"${i}\"><div class=\"whead\"><b>Sesión ${i+1}</b><span class=\"tag\">${optional?'EXTRA':'BASE'}</span></div>${sessionMuscles(i).map(m=>exerciseFor(m,i)).join('')}<div class=\"exercise\"><label class=\"mini\"><input type=\"checkbox\" class=\"check\" onchange=\"completeExercise(this,${i})\" ${S.sessionStatus&&S.sessionStatus[i]?'checked disabled':''}> Marcar esta sesión como realizada</label></div></div>`;const w=c.querySelector('.workout');if(w&&S.sessionStatus&&S.sessionStatus[i])w.querySelectorAll('.setinput').forEach(x=>x.disabled=true)}"
+          if old not in s: raise SystemExit('workoutList pattern not found')
+          s=s.replace(old,new,1)
+          old2="function completeExercise(node,sessionIndex){if(!node.checked)return;const box=node.closest('.workout');"
+          new2="function completeExercise(node,sessionIndex){if(!node.checked)return;const box=node.closest('.workout');"
+          if old2 not in s: raise SystemExit('completeExercise pattern not found')
+          marker="S.lastTraining=Date.now();save();tabTrack();el('dashCoach').innerHTML=coachRecommendation().text;node.disabled=true;box.querySelectorAll('.setinput').forEach(i=>i.disabled=true)}"
+          replacement="S.lastTraining=Date.now();S.sessionStatus=S.sessionStatus||{};S.sessionStatus[sessionIndex]=true;save();tabTrack();el('dashCoach').innerHTML=coachRecommendation().text;node.disabled=true;box.querySelectorAll('.setinput').forEach(i=>i.disabled=true);const nav=document.querySelector('.gp-session-nav');if(nav){const pill=nav.querySelector(`[data-session=\\\"${sessionIndex}\\\"]`);if(pill){pill.classList.remove('required','optional','selected');pill.classList.add('completed');pill.querySelector('small').textContent='COMPLETADA'}}}"
+          if marker not in s: raise SystemExit('completion marker not found')
+          s=s.replace(marker,replacement,1)
+          old3=".workout:not(.gp-collapsed) .whead:after{content:\"⌄\";font-size:18px;color:var(--muted);margin-left:auto}</style>"
+          new3=".workout:not(.gp-collapsed) .whead:after{content:\"⌄\";font-size:18px;color:var(--muted);margin-left:auto}.gp-session-nav{display:flex;gap:8px;overflow-x:auto;padding:3px 1px 8px;margin:12px 0 4px;scrollbar-width:none}.gp-session-nav::-webkit-scrollbar{display:none}.gp-session-pill{flex:0 0 auto;min-width:64px;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:850;cursor:pointer;text-align:center}.gp-session-pill.required{border-color:var(--accent);color:var(--accent);background:#2b2418}.gp-session-pill.optional{border-color:var(--line);color:var(--muted);background:var(--card2)}.gp-session-pill.completed{border-color:var(--ok);background:#12271d;color:var(--ok)}.gp-session-pill.selected{box-shadow:0 0 0 2px var(--text) inset}.gp-session-pill small{display:block;font-size:9px;margin-top:3px;opacity:.8}.gp-session-workout .whead:after{display:none!important}</style>"
+          if old3 not in s: raise SystemExit('css anchor not found')
+          s=s.replace(old3,new3,1)
+          old4="function tabNext(){el('tab-next').innerHTML=`<div class=\"banner\"><span class=\"tag\">SIGUIENTE ENTRENAMIENTO</span><h3 style=\"margin-top:10px\">Sesión ${S.nextSession}</h3><p class=\"muted\">Completa el peso y las repeticiones que hagas en cada serie.</p></div>${workoutList()}`}"
+          new4="function tabNext(){el('tab-next').innerHTML=`<div class=\"banner\"><span class=\"tag\">SIGUIENTE ENTRENAMIENTO</span><h3 style=\"margin-top:10px\">Sesión ${S.nextSession}</h3><p class=\"muted\">Completa el peso y las repeticiones que hagas en cada serie.</p></div>${workoutList()}`;selectSession((S.nextSession||1)-1)}"
+          if old4 not in s: raise SystemExit('tabNext pattern not found')
+          s=s.replace(old4,new4,1)
+          p.write_text(s)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add GymPro.html
+          git diff --cached --quiet || git commit -m "Add horizontal GymPro session navigation" && git push
