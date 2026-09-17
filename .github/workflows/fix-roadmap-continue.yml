@@ -1,0 +1,31 @@
+name: Fix roadmap continue
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-roadmap-continue.yml'
+  workflow_dispatch:
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch GymPro
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('GymPro.html')
+          s=p.read_text(encoding='utf-8')
+          old="const r=coachRecommendation();el('coachMsg').className='banner '+(r.ready?'ok':'');el('coachMsg').innerHTML=r.text"
+          if old not in s:
+              raise SystemExit('Target roadmap coach block not found')
+          s=s.replace(old,'',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add GymPro.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix Continue button on config screen'
+          git push
