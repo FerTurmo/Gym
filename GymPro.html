@@ -1,361 +1,975 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b0d10">
-  <title>GymPro</title>
-  <style>
-    :root {
-      --bg:#0b0d10; --card:#15181d; --card2:#1d2229; --line:#303640;
-      --text:#f5f7fa; --muted:#98a1ad; --accent:#e4b45e; --ok:#55d98b;
-      --warn:#f0b85b; --danger:#ef7373;
-    }
-    * { box-sizing:border-box; }
-    html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; height:100%; overflow:hidden; }
-    .app { max-width:760px; margin:auto; padding:85px 16px 60px; height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-    .top { position:fixed; top:var(--keyboard-offset,0px); left:0; right:0; z-index:10; background:var(--bg); padding:10px 16px 0; max-width:760px; margin:0 auto; display:flex; flex-direction:column; }
-    .top-row { display:flex; justify-content:space-between; align-items:center; }
-    .progress { height:4px; background:var(--card2); border-radius:9px; margin:12px 0 10px; overflow:hidden; }
-    .progress i { display:block; height:100%; background:var(--accent); width:0; transition:width .3s ease; }
-    .logo { font-size:24px; font-weight:900; }
-    .screen { display:none; }
-    .screen.active { display:block; }
-    .eyebrow { font-size:11px; font-weight:900; letter-spacing:1.2px; text-transform:uppercase; color:var(--accent); margin-bottom:9px; }
-    h1 { font-size:42px; line-height:1.02; letter-spacing:-1.6px; margin:0 0 18px; }
-    h2 { font-size:30px; letter-spacing:-.8px; margin:0 0 10px; }
-    h3 { margin:0 0 9px; }
-    .lead,.muted { color:var(--muted); line-height:1.55; }
-    .hero { padding:42px 0; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin:14px 0; }
-    .field { margin:18px 0; }
-    .field>label { display:block; font-weight:750; margin-bottom:9px; }
-    .hint { font-size:12px; color:var(--muted); line-height:1.45; margin-top:7px; }
-    .input { width:100%; padding:13px; font-size:16px; border-radius:11px; border:1px solid var(--line); background:#0f1216; color:var(--text); outline:none; }
-    .input:focus { border-color:var(--accent); }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-    .choices { display:grid; gap:9px; }
-    .choice { border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:12px; padding:13px; text-align:left; cursor:pointer; min-height:52px; }
-    .choice.selected { border-color:var(--accent); background:#2b2418; }
-    .choice small { display:block; color:var(--muted); margin-top:4px; }
-    .actions { display:flex; gap:9px; margin-top:22px; }
-    .btn { border:0; border-radius:11px; padding:13px 17px; font-weight:850; cursor:pointer; }
-    .primary { background:var(--accent); color:#111; }
-    .secondary { background:var(--card2); border:1px solid var(--line); color:var(--text); }
-    .back { border:0; background:none; color:var(--muted); padding:0; margin-bottom:20px; cursor:pointer; }
-    .hidden { display:none!important; }
-    .error { display:none; color:var(--danger); font-size:13px; margin-top:9px; }
-    .tag { display:inline-block; padding:5px 8px; border-radius:7px; background:#2b2418; color:var(--accent); font-size:10px; font-weight:900; letter-spacing:.5px; }
-    .summary { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-    .stat { background:var(--card2); padding:13px; border-radius:12px; }
-    .stat span { font-size:11px; color:var(--muted); }
-    .stat b { display:block; margin-top:4px; }
-    .phase { border:1px solid var(--line); border-radius:15px; padding:16px; margin:9px 0; background:var(--card); }
-    .phase.current { border-color:var(--accent); }
-    .phase.locked { opacity:.52; }
-    .phase .desc { font-size:13px; color:var(--muted); line-height:1.45; margin-top:6px; }
-    .phase .criterion { font-size:12px; color:var(--text); line-height:1.45; margin-top:10px; }
-    .phase .criterion span { color:var(--muted); }
-    .arrow { text-align:center; color:var(--muted); }
-    .tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin:15px 0; }
-    .tab { border:1px solid var(--line); background:var(--card); color:var(--muted); padding:10px; border-radius:10px; font-weight:800; }
-    .tab.active { color:var(--text); border-color:var(--accent); background:#2b2418; }
-    .workout { border:1px solid var(--line); border-radius:15px; margin:10px 0; overflow:hidden; }
-    .whead { padding:14px; background:var(--card2); display:flex; justify-content:space-between; gap:10px; }
-    .exercise { padding:13px; border-top:1px solid var(--line); background:var(--card); }
-    .row { display:flex; justify-content:space-between; gap:10px; }
-    .sets { font-size:12px; color:var(--muted); margin-top:4px; }
-    .mini { font-size:11px; color:var(--muted); }
-    .check { width:20px; height:20px; }
-    .banner { padding:15px; border-radius:14px; border:1px solid var(--line); background:var(--card2); margin:12px 0; }
-    .banner.ok { border-color:var(--ok); }
-    .banner.warn { border-color:var(--warn); }
-    .smallbtn { padding:9px 11px; border-radius:9px; border:1px solid var(--line); background:var(--card2); color:var(--text); cursor:pointer; }
-    .metric { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-    .modal { position:fixed; inset:0; background:#000b; display:none; align-items:flex-end; justify-content:center; z-index:5; }
-    .modal.show { display:flex; }
-    .sheet { width:min(760px,100%); background:var(--card); border:1px solid var(--line); border-radius:20px 20px 0 0; padding:20px; max-height:85vh; overflow:auto; }
-    .list { display:grid; gap:8px; }
-    .footer { color:var(--muted); font-size:11px; margin-top:30px; text-align:center; }
-    .setlog { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
-    .setrow { display:grid; grid-template-columns:34px 1fr 1fr; gap:8px; align-items:center; margin:7px 0; }
-    .setnum { font-size:12px; color:var(--muted); font-weight:800; }
-    .setinput { width:100%; padding:10px 9px; font-size:16px; border-radius:9px; border:1px solid var(--line); background:#0f1216; color:var(--text); outline:none; min-width:0; }
-    .setinput:focus { border-color:var(--accent); }
-    .setinput::placeholder { color:var(--accent); opacity:1; }
-    .historybox { margin-top:10px; padding:10px; border-radius:10px; background:#101318; border:1px solid var(--line); font-size:12px; color:var(--muted); }
-    .prescription { font-size:11px; color:var(--muted); margin-top:5px; }
-    .muscleline { font-size:11px; color:var(--muted); margin-top:4px; }
-    .workout.gp-collapsed>.exercise { display:none!important; }
-    .workout .whead { cursor:pointer; }
-    .workout.gp-collapsed .whead:after { content:"›"; font-size:20px; color:var(--muted); margin-left:auto; }
-    .workout:not(.gp-collapsed) .whead:after { content:"⌄"; font-size:18px; color:var(--muted); margin-left:auto; }
-    .gp-session-nav { display:flex; gap:8px; overflow-x:auto; padding:3px 1px 8px; margin:12px 0 4px; scrollbar-width:none; }
-    .gp-session-nav::-webkit-scrollbar { display:none; }
-    .gp-session-pill { flex:0 0 auto; min-width:64px; padding:10px 12px; border-radius:11px; border:1px solid var(--line); background:var(--card); color:var(--muted); font-weight:850; cursor:pointer; text-align:center; }
-    .gp-session-pill.required { border-color:var(--accent); color:var(--accent); background:#2b2418; }
-    .gp-session-pill.optional { border-color:var(--line); color:var(--muted); background:var(--card2); }
-    .gp-session-pill.completed { border-color:var(--ok); background:#12271d; color:var(--ok); }
-    .gp-session-pill.selected { box-shadow:0 0 0 2px var(--text) inset; }
-    .gp-session-pill small { display:block; font-size:9px; margin-top:3px; opacity:.8; }
-    .gp-session-workout .whead:after { display:none!important; }
-    @media(max-width:520px) {
-      .grid,.summary,.metric { grid-template-columns:1fr; }
-      h1 { font-size:36px; }
-      .setrow { grid-template-columns:28px 1fr 1fr; }
-      .setinput { padding:10px 7px; }
-    }
-  </style>
-</head>
-<body>
-  <div id="app" class="app">
-    <div class="top">
-      <div class="top-row">
-        <div class="logo">GymPro</div>
-        <button id="resetBtn" class="smallbtn hidden" onclick="resetApp()">Reiniciar</button>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>GymPro</title>
+    <style>
+      :root {
+        --bg: #0b0d10;
+        --card: #15181d;
+        --card2: #1d2229;
+        --line: #303640;
+        --text: #f5f7fa;
+        --muted: #98a1ad;
+        --accent: #e4b45e;
+        --ok: #55d98b;
+        --warn: #f0b85b;
+        --danger: #ef7373;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        height: 100%;
+        overflow: hidden;
+      }
+      .app {
+        max-width: 760px;
+        margin: auto;
+        padding: 85px 16px 60px;
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .top {
+        position: fixed;
+        top: var(--keyboard-offset, 0px);
+        left: 0;
+        right: 0;
+        z-index: 10;
+        background: var(--bg);
+        padding: 10px 16px 0;
+        max-width: 760px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .progress {
+        height: 4px;
+        background: var(--card2);
+        border-radius: 9px;
+        margin: 12px 0 10px;
+        overflow: hidden;
+      }
+      .progress i {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        width: 0;
+        transition: width 0.3s ease;
+      }
+      .logo {
+        font-size: 24px;
+        font-weight: 900;
+      }
+      .screen {
+        display: none;
+      }
+      .screen.active {
+        display: block;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 9px;
+      }
+      h1 {
+        font-size: 42px;
+        line-height: 1.02;
+        letter-spacing: -1.6px;
+        margin: 0 0 18px;
+      }
+      h2 {
+        font-size: 30px;
+        letter-spacing: -0.8px;
+        margin: 0 0 10px;
+      }
+      h3 {
+        margin: 0 0 9px;
+      }
+      .lead,
+      .muted {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .hero {
+        padding: 42px 0;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px;
+        margin: 14px 0;
+      }
+      .field {
+        margin: 18px 0;
+      }
+      .field > label {
+        display: block;
+        font-weight: 750;
+        margin-bottom: 9px;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.45;
+        margin-top: 7px;
+      }
+      .input {
+        width: 100%;
+        padding: 13px;
+        font-size: 16px;
+        border-radius: 11px;
+        border: 1px solid var(--line);
+        background: #0f1216;
+        color: var(--text);
+        outline: none;
+      }
+      .input:focus {
+        border-color: var(--accent);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+      .choices {
+        display: grid;
+        gap: 9px;
+      }
+      .choice {
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--text);
+        border-radius: 12px;
+        padding: 13px;
+        text-align: left;
+        cursor: pointer;
+        min-height: 52px;
+      }
+      .choice.selected {
+        border-color: var(--accent);
+        background: #2b2418;
+      }
+      .choice small {
+        display: block;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .actions {
+        display: flex;
+        gap: 9px;
+        margin-top: 22px;
+      }
+      .btn {
+        border: 0;
+        border-radius: 11px;
+        padding: 13px 17px;
+        font-weight: 850;
+        cursor: pointer;
+      }
+      .primary {
+        background: var(--accent);
+        color: #111;
+      }
+      .secondary {
+        background: var(--card2);
+        border: 1px solid var(--line);
+        color: var(--text);
+      }
+      .back {
+        border: 0;
+        background: none;
+        color: var(--muted);
+        padding: 0;
+        margin-bottom: 20px;
+        cursor: pointer;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .error {
+        display: none;
+        color: var(--danger);
+        font-size: 13px;
+        margin-top: 9px;
+      }
+      .tag {
+        display: inline-block;
+        padding: 5px 8px;
+        border-radius: 7px;
+        background: #2b2418;
+        color: var(--accent);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+      .stat {
+        background: var(--card2);
+        padding: 13px;
+        border-radius: 12px;
+      }
+      .stat span {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .stat b {
+        display: block;
+        margin-top: 4px;
+      }
+      .phase {
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        padding: 16px;
+        margin: 9px 0;
+        background: var(--card);
+      }
+      .phase.current {
+        border-color: var(--accent);
+      }
+      .phase.locked {
+        opacity: 0.52;
+      }
+      .phase .desc {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.45;
+        margin-top: 6px;
+      }
+      .phase .criterion {
+        font-size: 12px;
+        color: var(--text);
+        line-height: 1.45;
+        margin-top: 10px;
+      }
+      .phase .criterion span {
+        color: var(--muted);
+      }
+      .arrow {
+        text-align: center;
+        color: var(--muted);
+      }
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7px;
+        margin: 15px 0;
+      }
+      .tab {
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--muted);
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: 800;
+      }
+      .tab.active {
+        color: var(--text);
+        border-color: var(--accent);
+        background: #2b2418;
+      }
+      .workout {
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        margin: 10px 0;
+        overflow: hidden;
+      }
+      .whead {
+        padding: 14px;
+        background: var(--card2);
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .exercise {
+        padding: 13px;
+        border-top: 1px solid var(--line);
+        background: var(--card);
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .sets {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .mini {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .check {
+        width: 20px;
+        height: 20px;
+      }
+      .banner {
+        padding: 15px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: var(--card2);
+        margin: 12px 0;
+      }
+      .banner.ok {
+        border-color: var(--ok);
+      }
+      .banner.warn {
+        border-color: var(--warn);
+      }
+      .smallbtn {
+        padding: 9px 11px;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: var(--card2);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .metric {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: #000b;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 5;
+      }
+      .modal.show {
+        display: flex;
+      }
+      .sheet {
+        width: min(760px, 100%);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 20px 20px 0 0;
+        padding: 20px;
+        max-height: 85vh;
+        overflow: auto;
+      }
+      .list {
+        display: grid;
+        gap: 8px;
+      }
+      .footer {
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 30px;
+        text-align: center;
+      }
+      .setlog {
+        margin-top: 12px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+      .setrow {
+        display: grid;
+        grid-template-columns: 34px 1fr 1fr;
+        gap: 8px;
+        align-items: center;
+        margin: 7px 0;
+      }
+      .setnum {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .setinput {
+        width: 100%;
+        padding: 10px 9px;
+        font-size: 16px;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: #0f1216;
+        color: var(--text);
+        outline: none;
+        min-width: 0;
+      }
+      .setinput:focus {
+        border-color: var(--accent);
+      }
+      .setinput::placeholder {
+        color: var(--accent);
+        opacity: 1;
+      }
+      .historybox {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        background: #101318;
+        border: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .prescription {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .muscleline {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .workout.gp-collapsed > .exercise {
+        display: none !important;
+      }
+      .workout .whead {
+        cursor: pointer;
+      }
+      .workout.gp-collapsed .whead:after {
+        content: "›";
+        font-size: 20px;
+        color: var(--muted);
+        margin-left: auto;
+      }
+      .workout:not(.gp-collapsed) .whead:after {
+        content: "⌄";
+        font-size: 18px;
+        color: var(--muted);
+        margin-left: auto;
+      }
+      .gp-session-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 3px 1px 8px;
+        margin: 12px 0 4px;
+        scrollbar-width: none;
+      }
+      .gp-session-nav::-webkit-scrollbar {
+        display: none;
+      }
+      .gp-session-pill {
+        flex: 0 0 auto;
+        min-width: 64px;
+        padding: 10px 12px;
+        border-radius: 11px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--muted);
+        font-weight: 850;
+        cursor: pointer;
+        text-align: center;
+      }
+      .gp-session-pill.required {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: #2b2418;
+      }
+      .gp-session-pill.optional {
+        border-color: var(--line);
+        color: var(--muted);
+        background: var(--card2);
+      }
+      .gp-session-pill.completed {
+        border-color: var(--ok);
+        background: #12271d;
+        color: var(--ok);
+      }
+      .gp-session-pill.selected {
+        box-shadow: 0 0 0 2px var(--text) inset;
+      }
+      .gp-session-pill small {
+        display: block;
+        font-size: 9px;
+        margin-top: 3px;
+        opacity: 0.8;
+      }
+      .gp-session-workout .whead:after {
+        display: none !important;
+      }
+      @media (max-width: 520px) {
+        .grid,
+        .summary,
+        .metric {
+          grid-template-columns: 1fr;
+        }
+        h1 {
+          font-size: 36px;
+        }
+        .setrow {
+          grid-template-columns: 28px 1fr 1fr;
+        }
+        .setinput {
+          padding: 10px 7px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="app">
+      <div class="top">
+        <div class="top-row">
+          <div class="logo">GymPro</div>
+          <button id="resetBtn" class="smallbtn hidden" onclick="resetApp()">
+            Reiniciar
+          </button>
+        </div>
+        <div class="progress"><i id="bar"></i></div>
       </div>
-      <div class="progress"><i id="bar"></i></div>
+
+      <section id="intro" class="screen active">
+        <div class="hero">
+          <div class="eyebrow">Tu entrenamiento. Tu camino.</div>
+          <h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1>
+          <p class="lead">
+            GymPro construye un camino personalizado desde tu punto de partida,
+            te guía sesión a sesión y te avisa cuándo toca progresar o pasar a
+            la siguiente fase.
+          </p>
+          <div class="actions">
+            <button class="btn primary" onclick="show('personal',1)">
+              Empezar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="personal" class="screen">
+        <button class="back" onclick="show('intro',0)">← Volver</button>
+        <div class="eyebrow">1 · Conócete</div>
+        <h2>Vamos a conocerte un poco</h2>
+        <p class="muted">
+          Solo necesitamos lo esencial para construir tu primer plan.
+        </p>
+        <div class="card">
+          <div class="field">
+            <label>Edad</label
+            ><input
+              id="age"
+              class="input"
+              type="number"
+              min="13"
+              max="100"
+              placeholder="Ej. 32"
+            />
+          </div>
+          <div class="field">
+            <label>Sexo</label>
+            <div class="grid" id="sex">
+              <button class="choice" data-v="male" onclick="pick('sex',this)">
+                Hombre
+              </button>
+              <button class="choice" data-v="female" onclick="pick('sex',this)">
+                Mujer
+              </button>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="field">
+              <label>Altura (cm)</label
+              ><input
+                id="height"
+                class="input"
+                type="number"
+                min="100"
+                max="230"
+                placeholder="180"
+              />
+            </div>
+            <div class="field">
+              <label>Peso (kg)</label
+              ><input
+                id="weight"
+                class="input"
+                type="number"
+                min="30"
+                max="250"
+                step="0.1"
+                placeholder="70"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label>¿Cómo describirías tu estado físico actual?</label>
+            <div class="grid" id="physique">
+              <button
+                class="choice"
+                data-v="very_thin"
+                onclick="pick('physique',this)"
+              >
+                Muy delgado
+              </button>
+              <button
+                class="choice"
+                data-v="thin"
+                onclick="pick('physique',this)"
+              >
+                Delgado
+              </button>
+              <button
+                class="choice"
+                data-v="normal"
+                onclick="pick('physique',this)"
+              >
+                Normal
+              </button>
+              <button
+                class="choice"
+                data-v="some_fat"
+                onclick="pick('physique',this)"
+              >
+                Algo de grasa
+              </button>
+              <button
+                class="choice"
+                data-v="fat"
+                onclick="pick('physique',this)"
+              >
+                Bastante grasa
+              </button>
+              <button
+                class="choice"
+                data-v="muscular"
+                onclick="pick('physique',this)"
+              >
+                Musculoso
+              </button>
+              <button
+                class="choice"
+                data-v="very_muscular"
+                onclick="pick('physique',this)"
+              >
+                Muy musculoso
+              </button>
+            </div>
+          </div>
+          <div id="e1" class="error">Completa todos los datos.</div>
+        </div>
+        <button class="btn primary" onclick="personalNext()">Continuar</button>
+      </section>
+
+      <section id="experience" class="screen">
+        <button class="back" onclick="show('personal',1)">← Volver</button>
+        <div class="eyebrow">2 · Experiencia</div>
+        <h2>¿Cuál es tu experiencia entrenando?</h2>
+        <div class="card choices" id="exp">
+          <button class="choice" data-v="beginner" onclick="pick('exp',this)">
+            Principiante<small>Nunca o casi nunca he entrenado</small>
+          </button>
+          <button
+            class="choice"
+            data-v="intermediate"
+            onclick="pick('exp',this)"
+          >
+            Intermedio<small>Llevo tiempo entrenando y sigo progresando</small>
+          </button>
+          <button class="choice" data-v="advanced" onclick="pick('exp',this)">
+            Avanzado<small
+              >Llevo años entrenando y tengo bastante experiencia</small
+            >
+          </button>
+        </div>
+        <div id="e2" class="error">Selecciona tu nivel.</div>
+        <button class="btn primary" onclick="expNext()">Continuar</button>
+      </section>
+
+      <section id="goal" class="screen">
+        <button class="back" onclick="show('experience',2)">← Volver</button>
+        <div class="eyebrow">3 · Objetivo</div>
+        <h2>¿Qué quieres conseguir?</h2>
+        <p class="muted">
+          Elige un único objetivo principal. Tus demás datos nos dirán cómo
+          llegar hasta él.
+        </p>
+        <div class="card choices" id="goals">
+          <button class="choice" data-v="muscle" onclick="goalPick(this)">
+            💪 Ganar músculo
+          </button>
+          <button class="choice" data-v="fat" onclick="goalPick(this)">
+            🔥 Perder grasa
+          </button>
+          <button class="choice" data-v="recomp" onclick="goalPick(this)">
+            ⚖️ Ganar músculo y perder grasa
+          </button>
+          <button class="choice" data-v="athletic" onclick="goalPick(this)">
+            🏃 Conseguir un cuerpo atlético
+          </button>
+          <button class="choice" data-v="bodybuilder" onclick="goalPick(this)">
+            🏆 Conseguir un físico muy musculado
+          </button>
+          <button class="choice" data-v="health" onclick="goalPick(this)">
+            ❤️ Mantenerme en forma y saludable
+          </button>
+          <button class="choice" data-v="sport" onclick="goalPick(this)">
+            ⚡ Mejorar mi rendimiento deportivo
+          </button>
+        </div>
+        <div id="sportBox" class="card hidden">
+          <label><b>¿Qué deporte practicas?</b></label>
+          <div class="grid" id="sports">
+            <button
+              class="choice"
+              data-v="football"
+              onclick="pick('sports',this)"
+            >
+              ⚽ Fútbol
+            </button>
+            <button
+              class="choice"
+              data-v="basketball"
+              onclick="pick('sports',this)"
+            >
+              🏀 Baloncesto
+            </button>
+            <button class="choice" data-v="rugby" onclick="pick('sports',this)">
+              🏉 Rugby
+            </button>
+            <button
+              class="choice"
+              data-v="running"
+              onclick="pick('sports',this)"
+            >
+              🏃 Running
+            </button>
+            <button
+              class="choice"
+              data-v="cycling"
+              onclick="pick('sports',this)"
+            >
+              🚴 Ciclismo
+            </button>
+            <button
+              class="choice"
+              data-v="triathlon"
+              onclick="pick('sports',this)"
+            >
+              🏊 Triatlón
+            </button>
+            <button
+              class="choice"
+              data-v="swimming"
+              onclick="pick('sports',this)"
+            >
+              🏊 Natación
+            </button>
+            <button
+              class="choice"
+              data-v="tennis"
+              onclick="pick('sports',this)"
+            >
+              🎾 Tenis
+            </button>
+            <button class="choice" data-v="padel" onclick="pick('sports',this)">
+              🎾 Pádel
+            </button>
+            <button
+              class="choice"
+              data-v="combat"
+              onclick="pick('sports',this)"
+            >
+              🥊 Combate
+            </button>
+            <button
+              class="choice"
+              data-v="outdoor"
+              onclick="pick('sports',this)"
+            >
+              🏔️ Montaña / outdoor
+            </button>
+          </div>
+        </div>
+        <div id="e3" class="error">
+          Selecciona un objetivo y, si corresponde, un deporte.
+        </div>
+        <button class="btn primary" onclick="goalNext()">Continuar</button>
+      </section>
+
+      <section id="config" class="screen">
+        <button class="back" onclick="show('goal',3)">← Volver</button>
+        <div class="eyebrow">4 · Tu entrenamiento</div>
+        <h2>Configura tu entrenamiento</h2>
+        <p class="muted">
+          Aquí puedes definir la frecuencia y el equipamiento disponible.
+        </p>
+        <div id="configContent"></div>
+      </section>
+
+      <section id="roadmap" class="screen"></section>
+      <section id="dashboard" class="screen"></section>
+      <section id="progressScreen" class="screen"></section>
     </div>
 
-    <section id="intro" class="screen active">
-      <div class="hero">
-        <div class="eyebrow">Tu entrenamiento. Tu camino.</div>
-        <h1>No te damos una rutina. Te llevamos hasta tu objetivo.</h1>
-        <p class="lead">GymPro construye un camino personalizado desde tu punto de partida, te guía sesión a sesión y te avisa cuándo toca progresar o pasar a la siguiente fase.</p>
-        <div class="actions"><button class="btn primary" onclick="show('personal',1)">Empezar</button></div>
-      </div>
-    </section>
+    <div id="modal" class="modal">
+      <div class="sheet" id="sheet"></div>
+    </div>
 
-    <section id="personal" class="screen">
-      <button class="back" onclick="show('intro',0)">← Volver</button>
-      <div class="eyebrow">1 · Conócete</div>
-      <h2>Vamos a conocerte un poco</h2>
-      <p class="muted">Solo necesitamos lo esencial para construir tu primer plan.</p>
-      <div class="card">
-        <div class="field"><label>Edad</label><input id="age" class="input" type="number" min="13" max="100" placeholder="Ej. 32"></div>
-        <div class="field">
-          <label>Sexo</label>
-          <div class="grid" id="sex">
-            <button class="choice" data-v="male" onclick="pick('sex',this)">Hombre</button>
-            <button class="choice" data-v="female" onclick="pick('sex',this)">Mujer</button>
-          </div>
-        </div>
-        <div class="grid">
-          <div class="field"><label>Altura (cm)</label><input id="height" class="input" type="number" min="100" max="230" placeholder="180"></div>
-          <div class="field"><label>Peso (kg)</label><input id="weight" class="input" type="number" min="30" max="250" step="0.1" placeholder="70"></div>
-        </div>
-        <div class="field">
-          <label>¿Cómo describirías tu estado físico actual?</label>
-          <div class="grid" id="physique">
-            <button class="choice" data-v="very_thin" onclick="pick('physique',this)">Muy delgado</button>
-            <button class="choice" data-v="thin" onclick="pick('physique',this)">Delgado</button>
-            <button class="choice" data-v="normal" onclick="pick('physique',this)">Normal</button>
-            <button class="choice" data-v="some_fat" onclick="pick('physique',this)">Algo de grasa</button>
-            <button class="choice" data-v="fat" onclick="pick('physique',this)">Bastante grasa</button>
-            <button class="choice" data-v="muscular" onclick="pick('physique',this)">Musculoso</button>
-            <button class="choice" data-v="very_muscular" onclick="pick('physique',this)">Muy musculoso</button>
-          </div>
-        </div>
-        <div id="e1" class="error">Completa todos los datos.</div>
-      </div>
-      <button class="btn primary" onclick="personalNext()">Continuar</button>
-    </section>
-
-    <section id="experience" class="screen">
-      <button class="back" onclick="show('personal',1)">← Volver</button>
-      <div class="eyebrow">2 · Experiencia</div>
-      <h2>¿Cuál es tu experiencia entrenando?</h2>
-      <div class="card choices" id="exp">
-        <button class="choice" data-v="beginner" onclick="pick('exp',this)">Principiante<small>Nunca o casi nunca he entrenado</small></button>
-        <button class="choice" data-v="intermediate" onclick="pick('exp',this)">Intermedio<small>Llevo tiempo entrenando y sigo progresando</small></button>
-        <button class="choice" data-v="advanced" onclick="pick('exp',this)">Avanzado<small>Llevo años entrenando y tengo bastante experiencia</small></button>
-      </div>
-      <div id="e2" class="error">Selecciona tu nivel.</div>
-      <button class="btn primary" onclick="expNext()">Continuar</button>
-    </section>
-
-    <section id="goal" class="screen">
-      <button class="back" onclick="show('experience',2)">← Volver</button>
-      <div class="eyebrow">3 · Objetivo</div>
-      <h2>¿Qué quieres conseguir?</h2>
-      <p class="muted">Elige un único objetivo principal. Tus demás datos nos dirán cómo llegar hasta él.</p>
-      <div class="card choices" id="goals">
-        <button class="choice" data-v="muscle" onclick="goalPick(this)">💪 Ganar músculo</button>
-        <button class="choice" data-v="fat" onclick="goalPick(this)">🔥 Perder grasa</button>
-        <button class="choice" data-v="recomp" onclick="goalPick(this)">⚖️ Ganar músculo y perder grasa</button>
-        <button class="choice" data-v="athletic" onclick="goalPick(this)">🏃 Conseguir un cuerpo atlético</button>
-        <button class="choice" data-v="bodybuilder" onclick="goalPick(this)">🏆 Conseguir un físico muy musculado</button>
-        <button class="choice" data-v="health" onclick="goalPick(this)">❤️ Mantenerme en forma y saludable</button>
-        <button class="choice" data-v="sport" onclick="goalPick(this)">⚡ Mejorar mi rendimiento deportivo</button>
-      </div>
-      <div id="sportBox" class="card hidden">
-        <label><b>¿Qué deporte practicas?</b></label>
-        <div class="grid" id="sports">
-          <button class="choice" data-v="football" onclick="pick('sports',this)">⚽ Fútbol</button>
-          <button class="choice" data-v="basketball" onclick="pick('sports',this)">🏀 Baloncesto</button>
-          <button class="choice" data-v="rugby" onclick="pick('sports',this)">🏉 Rugby</button>
-          <button class="choice" data-v="running" onclick="pick('sports',this)">🏃 Running</button>
-          <button class="choice" data-v="cycling" onclick="pick('sports',this)">🚴 Ciclismo</button>
-          <button class="choice" data-v="triathlon" onclick="pick('sports',this)">🏊 Triatlón</button>
-          <button class="choice" data-v="swimming" onclick="pick('sports',this)">🏊 Natación</button>
-          <button class="choice" data-v="tennis" onclick="pick('sports',this)">🎾 Tenis</button>
-          <button class="choice" data-v="padel" onclick="pick('sports',this)">🎾 Pádel</button>
-          <button class="choice" data-v="combat" onclick="pick('sports',this)">🥊 Combate</button>
-          <button class="choice" data-v="outdoor" onclick="pick('sports',this)">🏔️ Montaña / outdoor</button>
-        </div>
-      </div>
-      <div id="e3" class="error">Selecciona un objetivo y, si corresponde, un deporte.</div>
-      <button class="btn primary" onclick="goalNext()">Continuar</button>
-    </section>
-
-    <section id="config" class="screen">
-      <button class="back" onclick="show('goal',3)">← Volver</button>
-      <div class="eyebrow">4 · Tu entrenamiento</div>
-      <h2>Configura tu entrenamiento</h2>
-      <p class="muted">Aquí puedes definir la frecuencia y el equipamiento disponible.</p>
-      <div id="configContent"></div>
-    </section>
-
-    <section id="roadmap" class="screen"></section>
-    <section id="dashboard" class="screen"></section>
-    <section id="progressScreen" class="screen"></section>
-  </div>
-
-  <div id="modal" class="modal">
-    <div class="sheet" id="sheet"></div>
-  </div>
-
-  <script>
-    /*
+    <script>
+      /*
       GymPro
       - Estado y lógica principal.
       - Mantener las funciones globales porque la interfaz usa onclick="...".
     */
-    const KEY = 'gympro_state_v1';
-    const el = id => document.getElementById(id);
-    let S = JSON.parse(localStorage.getItem(KEY) || '{}');
-    S.workoutDrafts = {};
-    S.workoutHistory = Array.isArray(S.workoutHistory) ? S.workoutHistory : [];
-    S.sessionStatus = S.sessionStatus || {};
+      const KEY = "gympro_state_v1";
+      const el = (id) => document.getElementById(id);
+      let S = JSON.parse(localStorage.getItem(KEY) || "{}");
+      S.workoutDrafts = {};
+      S.workoutHistory = Array.isArray(S.workoutHistory)
+        ? S.workoutHistory
+        : [];
+      S.sessionStatus = S.sessionStatus || {};
 
-    function save() {
-      localStorage.setItem(KEY, JSON.stringify(S));
-    }
-
-    function show(id, step) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      const target = el(id);
-      if (target) target.classList.add('active');
-      const app = el('app');
-      if (app) app.scrollTo({ top:0, left:0, behavior:'instant' });
-      if (typeof step === 'number') {
-        const bar = el('bar');
-        if (bar) bar.style.width = `${Math.max(0, Math.min(100, step * 14.28))}%`;
+      function save() {
+        localStorage.setItem(KEY, JSON.stringify(S));
       }
-    }
 
-    function pick(group, button) {
-      const parent = el(group);
-      if (!parent) return;
-      parent.querySelectorAll('.choice').forEach(b => b.classList.remove('selected'));
-      button.classList.add('selected');
-      S[group] = button.dataset.v;
-      save();
-    }
-
-    function resetApp() {
-      localStorage.removeItem(KEY);
-      location.reload();
-    }
-
-    function personalNext() {
-      const age = Number(el('age')?.value);
-      const height = Number(el('height')?.value);
-      const weight = Number(el('weight')?.value);
-      if (!age || !height || !weight || !S.sex || !S.physique) {
-        el('e1').style.display = 'block';
-        return;
+      function show(id, step) {
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        const target = el(id);
+        if (target) target.classList.add("active");
+        const app = el("app");
+        if (app) app.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        if (typeof step === "number") {
+          const bar = el("bar");
+          if (bar)
+            bar.style.width = `${Math.max(0, Math.min(100, step * 14.28))}%`;
+        }
       }
-      S.age = age;
-      S.height = height;
-      S.weight = weight;
-      save();
-      show('experience', 2);
-    }
 
-    function expNext() {
-      if (!S.exp) {
-        el('e2').style.display = 'block';
-        return;
+      function pick(group, button) {
+        const parent = el(group);
+        if (!parent) return;
+        parent
+          .querySelectorAll(".choice")
+          .forEach((b) => b.classList.remove("selected"));
+        button.classList.add("selected");
+        S[group] = button.dataset.v;
+        save();
       }
-      show('goal', 3);
-    }
 
-    function goalPick(button) {
-      document.querySelectorAll('#goals .choice').forEach(b => b.classList.remove('selected'));
-      button.classList.add('selected');
-      S.goal = button.dataset.v;
-      el('sportBox').classList.toggle('hidden', S.goal !== 'sport');
-      save();
-    }
-
-    function goalNext() {
-      if (!S.goal || (S.goal === 'sport' && !S.sports)) {
-        el('e3').style.display = 'block';
-        return;
+      function resetApp() {
+        localStorage.removeItem(KEY);
+        location.reload();
       }
-      show('config', 4);
-      renderConfig();
-    }
 
-    function renderConfig() {
-      const box = el('configContent');
-      if (!box) return;
-      box.innerHTML = `
+      function personalNext() {
+        const age = Number(el("age")?.value);
+        const height = Number(el("height")?.value);
+        const weight = Number(el("weight")?.value);
+        if (!age || !height || !weight || !S.sex || !S.physique) {
+          el("e1").style.display = "block";
+          return;
+        }
+        S.age = age;
+        S.height = height;
+        S.weight = weight;
+        save();
+        show("experience", 2);
+      }
+
+      function expNext() {
+        if (!S.exp) {
+          el("e2").style.display = "block";
+          return;
+        }
+        show("goal", 3);
+      }
+
+      function goalPick(button) {
+        document
+          .querySelectorAll("#goals .choice")
+          .forEach((b) => b.classList.remove("selected"));
+        button.classList.add("selected");
+        S.goal = button.dataset.v;
+        el("sportBox").classList.toggle("hidden", S.goal !== "sport");
+        save();
+      }
+
+      function goalNext() {
+        if (!S.goal || (S.goal === "sport" && !S.sports)) {
+          el("e3").style.display = "block";
+          return;
+        }
+        show("config", 4);
+        renderConfig();
+      }
+
+      function renderConfig() {
+        const box = el("configContent");
+        if (!box) return;
+        box.innerHTML = `
         <div class="card">
           <div class="field">
             <label>¿Cuántos días quieres entrenar?</label>
             <div class="grid" id="days">
-              ${[2,3,4,5,6].map(n => `<button class="choice ${S.days===n?'selected':''}" data-v="${n}" onclick="S.days=${n};save();renderConfig()">${n} días</button>`).join('')}
+              ${[2, 3, 4, 5, 6].map((n) => `<button class="choice ${S.days === n ? "selected" : ""}" data-v="${n}" onclick="S.days=${n};save();renderConfig()">${n} días</button>`).join("")}
             </div>
           </div>
           <div class="field">
             <label>¿Qué día quieres que empiece tu semana de entrenamiento?</label>
             <p class="hint">Cada semana comenzará ese día, y tus recomendaciones se actualizarán teniendo en cuenta lo que hayas hecho la semana anterior.</p>
             <div class="grid" id="weekStart">
-              ${['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map((d,i) => `<button class="choice ${S.weekStart===i?'selected':''}" onclick="S.weekStart=${i};save();renderConfig()">${d}</button>`).join('')}
+              ${["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].map((d, i) => `<button class="choice ${S.weekStart === i ? "selected" : ""}" onclick="S.weekStart=${i};save();renderConfig()">${d}</button>`).join("")}
             </div>
           </div>
         </div>
         <button class="btn primary" onclick="finishConfig()">Crear mi plan</button>
       `;
-    }
+      }
 
-    function finishConfig() {
-      if (!S.days) S.days = 3;
-      if (typeof S.weekStart !== 'number') S.weekStart = 0;
-      S.startedAt = S.startedAt || Date.now();
-      save();
-      renderDashboard();
-      show('dashboard', 5);
-    }
+      function finishConfig() {
+        if (!S.days) S.days = 3;
+        if (typeof S.weekStart !== "number") S.weekStart = 0;
+        S.startedAt = S.startedAt || Date.now();
+        save();
+        renderDashboard();
+        show("dashboard", 5);
+      }
 
-    /*
+      /*
       El resto de la aplicación conserva la lógica de prescripción,
       recomendaciones, historial, sesiones, roadmap y progreso.
     */
-    function labelsGoal() {
-      return {
-        muscle:'Ganar músculo', fat:'Perder grasa', recomp:'Recomposición',
-        athletic:'Cuerpo atlético', bodybuilder:'Físico muy musculado',
-        health:'Salud y forma', sport:'Rendimiento deportivo'
-      }[S.goal] || 'Tu objetivo';
-    }
+      function labelsGoal() {
+        return (
+          {
+            muscle: "Ganar músculo",
+            fat: "Perder grasa",
+            recomp: "Recomposición",
+            athletic: "Cuerpo atlético",
+            bodybuilder: "Físico muy musculado",
+            health: "Salud y forma",
+            sport: "Rendimiento deportivo",
+          }[S.goal] || "Tu objetivo"
+        );
+      }
 
-    function renderDashboard() {
-      const box = el('dashboard');
-      if (!box) return;
-      box.innerHTML = `
+      function renderDashboard() {
+        const box = el("dashboard");
+        if (!box) return;
+        box.innerHTML = `
         <div class="eyebrow">Tu plan</div>
         <h2>${labelsGoal()}</h2>
         <div class="tabs">
@@ -365,66 +979,74 @@
         </div>
         <div id="tabContent"></div>
       `;
-      renderTraining();
-    }
+        renderTraining();
+      }
 
-    function tab(name, button) {
-      document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active'));
-      if (button) button.classList.add('active');
-      if (name === 'next') renderTraining();
-      if (name === 'roadmap') renderRoadmap();
-      if (name === 'progress') renderProgress();
-    }
+      function tab(name, button) {
+        document
+          .querySelectorAll(".tabs .tab")
+          .forEach((b) => b.classList.remove("active"));
+        if (button) button.classList.add("active");
+        if (name === "next") renderTraining();
+        if (name === "roadmap") renderRoadmap();
+        if (name === "progress") renderProgress();
+      }
 
-    function renderTraining() {
-      const box = el('tabContent');
-      if (!box) return;
-      box.innerHTML = `
+      function renderTraining() {
+        const box = el("tabContent");
+        if (!box) return;
+        box.innerHTML = `
         <div class="banner">Selecciona cualquier sesión para ver qué te toca hacer.</div>
         <div class="gp-session-nav">
-          ${[0,1,2,3].map(i => `<button type="button" class="gp-session-pill ${i<2?'required':'optional'} ${i===0?'selected':''}" data-session="${i}">S.${i+1}<small>${i<2?'Obligatoria':'Opcional'}</small></button>`).join('')}
+          ${[0, 1, 2, 3].map((i) => `<button type="button" class="gp-session-pill ${i < 2 ? "required" : "optional"} ${i === 0 ? "selected" : ""}" data-session="${i}">S.${i + 1}<small>${i < 2 ? "Obligatoria" : "Opcional"}</small></button>`).join("")}
         </div>
         <div id="gp-session-content"></div>
       `;
-      document.querySelectorAll('.gp-session-pill').forEach(button => {
-        button.addEventListener('click', () => selectSession(Number(button.dataset.session)));
-      });
-      selectSession(0);
-    }
+        document.querySelectorAll(".gp-session-pill").forEach((button) => {
+          button.addEventListener("click", () =>
+            selectSession(Number(button.dataset.session)),
+          );
+        });
+        selectSession(0);
+      }
 
-    function selectSession(index) {
-      document.querySelectorAll('.gp-session-pill').forEach(b => b.classList.toggle('selected', Number(b.dataset.session) === index));
-      const box = el('gp-session-content');
-      if (!box) return;
-      box.innerHTML = `
+      function selectSession(index) {
+        document
+          .querySelectorAll(".gp-session-pill")
+          .forEach((b) =>
+            b.classList.toggle("selected", Number(b.dataset.session) === index),
+          );
+        const box = el("gp-session-content");
+        if (!box) return;
+        box.innerHTML = `
         <div class="workout gp-session-workout">
-          <div class="whead"><div><b>Sesión ${index + 1}</b><div class="mini">${index < 2 ? 'Obligatoria' : 'Opcional'}</div></div></div>
+          <div class="whead"><div><b>Sesión ${index + 1}</b><div class="mini">${index < 2 ? "Obligatoria" : "Opcional"}</div></div></div>
           <div class="exercise">
-            <div class="row"><b>Tu sesión de hoy</b><span class="tag">${index < 2 ? 'PRIORIDAD' : 'EXTRA'}</span></div>
+            <div class="row"><b>Tu sesión de hoy</b><span class="tag">${index < 2 ? "PRIORIDAD" : "EXTRA"}</span></div>
             <div class="sets">Los ejercicios y recomendaciones se cargarán aquí.</div>
           </div>
         </div>
       `;
-    }
-
-    function renderRoadmap() {
-      const box = el('tabContent');
-      if (!box) return;
-      box.innerHTML = `<div class="phase current"><h3>Fase actual</h3><div class="desc">GymPro adapta tu entrenamiento según tu objetivo y tu historial.</div></div>`;
-    }
-
-    function renderProgress() {
-      const box = el('tabContent');
-      if (!box) return;
-      box.innerHTML = `<div class="summary"><div class="stat"><span>Sesiones completadas</span><b>${S.workoutHistory.length}</b></div><div class="stat"><span>Objetivo</span><b>${labelsGoal()}</b></div></div>`;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      if (S.startedAt) {
-        renderDashboard();
-        show('dashboard', 5);
       }
-    });
-  </script>
-</body>
+
+      function renderRoadmap() {
+        const box = el("tabContent");
+        if (!box) return;
+        box.innerHTML = `<div class="phase current"><h3>Fase actual</h3><div class="desc">GymPro adapta tu entrenamiento según tu objetivo y tu historial.</div></div>`;
+      }
+
+      function renderProgress() {
+        const box = el("tabContent");
+        if (!box) return;
+        box.innerHTML = `<div class="summary"><div class="stat"><span>Sesiones completadas</span><b>${S.workoutHistory.length}</b></div><div class="stat"><span>Objetivo</span><b>${labelsGoal()}</b></div></div>`;
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        if (S.startedAt) {
+          renderDashboard();
+          show("dashboard", 5);
+        }
+      });
+    </script>
+  </body>
 </html>
