@@ -75,6 +75,14 @@
 
   window.preferred=function(m){
     try{
+      const plan=matrixPlan();
+      for(const session of plan.sessions||[]){
+        const item=(session.exercises||[]).find(e=>e.muscle===m);
+        if(item){
+          const x=EX.find(e=>e.id===item.exerciseId);
+          if(x)return x;
+        }
+      }
       const x=window.GP_SUPER_MATRIX.chooseExercise(
         profile(),
         m,
