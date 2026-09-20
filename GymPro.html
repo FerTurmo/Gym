@@ -62,7 +62,7 @@
     const k=key();
     if(k===cacheKey&&cachePlan)return cachePlan;
     cacheKey=k;
-    cachePlan=GP_SUPER_MATRIX.plan(profile(),{
+    cachePlan=window.GP_SUPER_MATRIX.plan(profile(),{
       phaseIndex:S.phaseState?.index||0,
       history:S.workoutHistory||[],
       exercises:EX||[],
@@ -75,7 +75,7 @@
 
   window.preferred=function(m){
     try{
-      const x=GP_SUPER_MATRIX.chooseExercise(
+      const x=window.GP_SUPER_MATRIX.chooseExercise(
         profile(),
         m,
         S.workoutHistory||[],
@@ -136,11 +136,11 @@
 
   window.gpMatrixExplain=function(){
     const p=matrixPlan();
-    return GP_SUPER_MATRIX.explain(p);
+    return window.GP_SUPER_MATRIX.explain(p);
   };
 
   window.gpMatrixValidate=function(){
-    return GP_SUPER_MATRIX.validate(matrixPlan());
+    return window.GP_SUPER_MATRIX.validate(matrixPlan());
   };
 })();
 </script></body></html>
