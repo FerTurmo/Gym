@@ -16,4 +16,139 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
-</body></html>
+<script src="GymProMatrix.js"></script>
+<script>
+(function(){
+  if(!window.GP_SUPER_MATRIX)return;
+  const originalPreferred=window.preferred;
+  const originalPrescription=window.prescription;
+  let cacheKey='',cachePlan=null;
+
+  function profile(){
+    return {
+      age:S.age,
+      sex:S.sex,
+      height:S.height,
+      weight:S.weight,
+      fat:S.fat,
+      physique:S.physique,
+      experience:S.experience,
+      goal:S.goal,
+      sport:S.sport||S.sports||null,
+      daysPerWeek:S.minDays||3,
+      duration:S.duration||60,
+      equipment:S.equipment||[],
+      priority:S.priority||[],
+      style:S.style||'balanced',
+      split:S.split||'auto',
+      protectedAreas:S.limits||[],
+      phaseIndex:S.phaseState?.index||0
+    };
+  }
+
+  function key(){
+    const p=profile();
+    const h=S.workoutHistory||[];
+    const last=h[h.length-1];
+    return JSON.stringify({
+      p,
+      historyLength:h.length,
+      lastDate:last?.date||0,
+      lastId:last?.id||''
+    });
+  }
+
+  function matrixPlan(){
+    const k=key();
+    if(k===cacheKey&&cachePlan)return cachePlan;
+    cacheKey=k;
+    cachePlan=window.GP_SUPER_MATRIX.plan(profile(),{
+      phaseIndex:S.phaseState?.index||0,
+      history:S.workoutHistory||[],
+      exercises:EX||[],
+      rules:EX_RULES||{}
+    });
+    return cachePlan;
+  }
+
+  window.gpSuperMatrixPlan=matrixPlan;
+
+  window.preferred=function(m){
+    try{
+      const plan=matrixPlan();
+      for(const session of plan.sessions||[]){
+        const item=(session.exercises||[]).find(e=>e.muscle===m);
+        if(item){
+          const x=EX.find(e=>e.id===item.exerciseId);
+          if(x)return x;
+        }
+      }
+      const x=window.GP_SUPER_MATRIX.chooseExercise(
+        profile(),
+        m,
+        S.workoutHistory||[],
+        EX||[],
+        EX_RULES||{}
+      );
+      return x||originalPreferred(m);
+    }catch(e){
+      return originalPreferred(m);
+    }
+  };
+
+  window.prescription=function(x){
+    try{
+      const plan=matrixPlan();
+      for(const session of plan.sessions||[]){
+        const item=(session.exercises||[]).find(e=>e.exerciseId===x.id);
+        if(item){
+          const base=(typeof EX_RULES!=='undefined'&&EX_RULES[x.id])||{
+            primary:x.m,
+            secondary:[],
+            kind:'compound',
+            base:[item.reps[0],item.reps[1]],
+            sets:item.sets
+          };
+          return {
+            ...base,
+            sets:item.sets,
+            lo:item.reps[0],
+            hi:item.reps[1],
+            reps:item.reps[0]+'–'+item.reps[1],
+            rir:item.rir,
+            weeklyShare:item.weeklyShare,
+            frequency:item.frequency
+          };
+        }
+      }
+    }catch(e){}
+    return originalPrescription(x);
+  };
+
+  window.sessionMuscles=function(i){
+    try{
+      const plan=matrixPlan();
+      const sessions=plan.sessions||[];
+      const s=sessions[i%sessions.length];
+      if(s){
+        const groups=[];
+        (s.exercises||[]).forEach(x=>{
+          if(!groups.includes(x.muscle))groups.push(x.muscle);
+        });
+        const fallback=(s.groups||[]).filter(x=>!groups.includes(x));
+        return [...groups,...fallback].slice(0,4);
+      }
+    }catch(e){}
+    return ['chest','back','legs','shoulders'];
+  };
+
+  window.gpMatrixExplain=function(){
+    const p=matrixPlan();
+    return window.GP_SUPER_MATRIX.explain(p);
+  };
+
+  window.gpMatrixValidate=function(){
+    return window.GP_SUPER_MATRIX.validate(matrixPlan());
+  };
+})();
+</script></body></html>

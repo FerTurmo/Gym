@@ -83,8 +83,8 @@
 
   const REP={
     strength:{compound:[4,6],isolation:[8,10]},
-    hypertrophy:{compound:[6,10],isolation:[8,15]},
-    mixed:{compound:[6,10],isolation:[10,15]},
+    hypertrophy:{compound:[6,8],isolation:[10,12]},
+    mixed:{compound:[8,10],isolation:[12,15]},
     athletic:{compound:[5,8],isolation:[8,12]},
     sport:{compound:[5,8],isolation:[8,12]},
     health:{compound:[8,12],isolation:[10,15]}
