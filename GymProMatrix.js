@@ -323,15 +323,17 @@
     MUSCLES.forEach(m=>{
       const freq=frequency(p,m,volumes[m]);
       const shares=distribute(volumes[m],freq);
-      let pointer=0;
       shares.forEach(share=>{
-        let targetIndex=-1;
-        for(let i=0;i<schedule.length;i++){
-          const s=schedule[i];
-          if(!s.exercises.some(x=>x.muscle===m) && s.groups.includes(m)){targetIndex=i;break}
-        }
-        if(targetIndex<0)targetIndex=pointer%schedule.length;
-        pointer++;
+        const candidates=schedule
+          .map((s,i)=>({s,i,load:s.exercises.reduce((a,x)=>a+x.sets,0)}))
+          .filter(x=>x.s.groups.includes(m) && !x.s.exercises.some(y=>y.muscle===m))
+          .sort((a,b)=>a.load-b.load);
+        const targetIndex=candidates.length?candidates[0].i:(
+          schedule.map((s,i)=>({s,i,load:s.exercises.reduce((a,x)=>a+x.sets,0)}))
+            .filter(x=>x.s.groups.includes(m))
+            .sort((a,b)=>a.load-b.load)[0]?.i
+        );
+        if(targetIndex===undefined)return;
         const ex=chooseExercise(p,m,history,exercises,rules);
         if(!ex)return;
         const rule=rules[ex.id]||{};
