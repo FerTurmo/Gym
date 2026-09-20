@@ -65,8 +65,8 @@
     cachePlan=GP_SUPER_MATRIX.plan(profile(),{
       phaseIndex:S.phaseState?.index||0,
       history:S.workoutHistory||[],
-      exercises:window.EX||[],
-      rules:window.EX_RULES||{}
+      exercises:EX||[],
+      rules:EX_RULES||{}
     });
     return cachePlan;
   }
@@ -79,8 +79,8 @@
         profile(),
         m,
         S.workoutHistory||[],
-        window.EX||[],
-        window.EX_RULES||{}
+        EX||[],
+        EX_RULES||{}
       );
       return x||originalPreferred(m);
     }catch(e){
@@ -94,7 +94,7 @@
       for(const session of plan.sessions||[]){
         const item=(session.exercises||[]).find(e=>e.exerciseId===x.id);
         if(item){
-          const base=(window.EX_RULES&&EX_RULES[x.id])||{
+          const base=(typeof EX_RULES!=='undefined'&&EX_RULES[x.id])||{
             primary:x.m,
             secondary:[],
             kind:'compound',
