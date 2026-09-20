@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GymPro · Super Matrix Test</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0d10;color:#f5f7fa;margin:0;padding:24px}main{max-width:900px;margin:auto}.card{background:#15181d;border:1px solid #303640;border-radius:16px;padding:16px;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pill{display:inline-block;padding:5px 8px;border-radius:7px;background:#2b2418;color:#e4b45e;font-size:11px;font-weight:800}.muted{color:#98a1ad}pre{white-space:pre-wrap;overflow:auto;background:#101318;padding:12px;border-radius:10px}@media(max-width:600px){.grid{grid-template-columns:1fr}}</style></head>
+<body><main><h1>GymPro Super Matrix</h1><p class="muted">Prueba aislada del motor antes de integrarlo en GymPro.</p><div id="out"></div></main>
+<script src="GymProMatrix.js"></script>
+<script>
+const profile={age:32,sex:'male',height:180,weight:70,fat:18,physique:'normal',experience:'intermediate',goal:'recomp',daysPerWeek:4,duration:60,equipment:['machines','cables'],priority:['chest'],style:'aesthetic',split:'auto',phaseIndex:1};
+const exercises=[
+{id:'chest_press',name:'Press de pecho en máquina',m:'chest',eq:'machines'},
+{id:'lat_pulldown',name:'Jalón al pecho',m:'back',eq:'machines'},
+{id:'seated_row',name:'Remo sentado',m:'back',eq:'cables'},
+{id:'shoulder_press',name:'Press de hombros en máquina',m:'shoulders',eq:'machines'},
+{id:'leg_press',name:'Prensa de piernas',m:'legs',eq:'machines'},
+{id:'leg_curl',name:'Curl femoral',m:'legs',eq:'machines'},
+{id:'glute',name:'Extensión de cadera en máquina',m:'glutes',eq:'machines'},
+{id:'calf',name:'Gemelo sentado',m:'calves',eq:'machines'},
+{id:'curl',name:'Curl de bíceps en polea',m:'arms',eq:'cables'},
+{id:'triceps',name:'Extensión de tríceps en polea',m:'arms',eq:'cables'},
+{id:'crunch',name:'Crunch',m:'core',eq:'machines'}
+];
+const rules=Object.fromEntries(exercises.map(e=>[e.id,{kind:['chest_press','lat_pulldown','seated_row','shoulder_press','leg_press'].includes(e.id)?'compound':'isolation'}]));
+const plan=GP_SUPER_MATRIX.plan(profile,{phaseIndex:1,history:[],exercises,rules});
+const v=GP_SUPER_MATRIX.validate(plan);
+document.getElementById('out').innerHTML='<div class="card"><span class="pill">Motor '+GP_SUPER_MATRIX.VERSION+'</span><h2>Cadena de decisión</h2><ol>'+GP_SUPER_MATRIX.explain(plan).decisionChain.map(x=>'<li>'+x+'</li>').join('')+'</ol></div><div class="grid">'+plan.sessions.map(s=>'<div class="card"><h3>'+s.name+'</h3><div class="muted">'+s.exercises.reduce((a,x)=>a+x.sets,0)+' series programadas</div>'+s.exercises.map(x=>'<p><b>'+x.exerciseName+'</b><br><span class="muted">'+x.sets+' × '+x.reps[0]+'–'+x.reps[1]+' · RIR '+x.rir+'</span></p>').join('')+'</div>').join('')+'</div><div class="card"><h2>Volumen semanal</h2><pre>'+JSON.stringify(plan.weeklyVolume,null,2)+'</pre><b>Validación: '+(v.ok?'OK':'ERROR')+'</b></div>';
+</script></body></html>
