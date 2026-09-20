@@ -318,7 +318,7 @@
     const rules=context?.rules||{};
     const volumes=weeklyVolume(p,history);
     const blueprint=sessionBlueprint(p);
-    const schedule=blueprint.map((s,si)=>({index:si+1,name:s.name,exercises:[]}));
+    const schedule=blueprint.map((s,si)=>({index:si+1,name:s.name,groups:s.groups||[],exercises:[]}));
     const used={};
     MUSCLES.forEach(m=>{
       const freq=frequency(p,m,volumes[m]);
