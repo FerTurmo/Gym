@@ -19,7 +19,7 @@
   // Double progression: first drive every set toward the top of the
   // objective-specific range. Only once every set reaches the top do we add
   // load and reset the proposed reps to the lower end of that same range.
-  if(allTop&&baseWeight&&actualRir!==null&&targetRir!==null&&actualRir<=targetRir+1){
+  if(allTop&&baseWeight&&actualRir!==null&&targetRir!==null&&actualRir>=Math.max(0,targetRir-1)&&actualRir<=targetRir+2){
     return{
       weight:roundWeight(baseWeight+weightStep(x),x),
       reps:p.lo,
