@@ -166,9 +166,45 @@ function finishDeload(){
   save();
   renderDashboard();
 }
+function exerciseLearningProfile(x){
+  const history=[];
+  for(let i=S.workoutHistory.length-1;i>=0&&history.length<6;i--){
+    const ex=(S.workoutHistory[i].exercises||[]).find(e=>e.exerciseId===x.id);
+    if(!ex)continue;
+    const sets=(ex.sets||[]).filter(s=>Number.isFinite(+s.reps)&&+s.reps>0);
+    if(!sets.length)continue;
+    const reps=sets.map(s=>+s.reps),weights=sets.map(s=>+s.weight).filter(Number.isFinite);
+    const avgReps=reps.reduce((a,v)=>a+v,0)/reps.length;
+    const load=weights.length?Math.max(...weights):null;
+    const p=prescription(x);
+    const topRate=reps.filter(v=>v>=p.hi).length/reps.length;
+    const rangeRate=reps.filter(v=>v>=p.lo).length/reps.length;
+    history.push({avgReps,load,topRate,rangeRate,date:S.workoutHistory[i].date});
+  }
+  const exposures=history.length;
+  if(!exposures)return{status:'new',exposures:0,confidence:0,progressionRate:0,trend:0};
+  const recent=history.slice(0,Math.min(3,exposures)),older=history.slice(3);
+  const progressionEvents=[];
+  for(let i=0;i<history.length-1;i++){
+    const a=history[i],b=history[i+1];
+    if(a.load!==null&&b.load!==null)progressionEvents.push(a.load>b.load);
+    else progressionEvents.push(a.avgReps>b.avgReps+0.5);
+  }
+  const progressionRate=progressionEvents.length?progressionEvents.filter(Boolean).length/progressionEvents.length:0;
+  const recentAvg=recent.reduce((a,v)=>a+v.avgReps,0)/recent.length;
+  const olderAvg=older.length?older.reduce((a,v)=>a+v.avgReps,0)/older.length:recentAvg;
+  const trend=recentAvg-olderAvg;
+  const rangeRate=recent.reduce((a,v)=>a+v.rangeRate,0)/recent.length;
+  const topRate=recent.reduce((a,v)=>a+v.topRate,0)/recent.length;
+  let status='stable';
+  if(exposures>=3&&(progressionRate>=.5||trend>=.75))status='progressing';
+  else if(exposures>=3&&(progressionRate<=.2||trend<=-.75||rangeRate<.6))status='struggling';
+  return{status,exposures,confidence:Math.min(1,exposures/6),progressionRate,trend,rangeRate,topRate};
+}
 function recommendation(x){
   const p=prescription(x),h=exerciseHistory(x);
   const stagnation=exerciseStagnation(x);
+  const learning=exerciseLearningProfile(x);
   const fatigue=trainingFatigueSignal();
   const deload=trainingDeloadSignal();
   if(deload.status==='complete'){finishDeload();}
@@ -189,7 +225,9 @@ function recommendation(x){
   if(deload.status==='active')return{weight:roundWeight(baseWeight*0.9,x),reps:p.hi,reason:'Deload activo: reducimos temporalmente el estímulo para facilitar la recuperación sin cambiar tu objetivo.'};
   if(fatigue.level==='high')return{weight:roundWeight(baseWeight,x),reps:p.lo,reason:'Hay una señal de fatiga acumulada. GymPro no subirá la carga ahora: mantén el peso y prioriza completar el rango con buena técnica.'};
   if(fatigue.level==='moderate'&&strongPerformance)return{weight:roundWeight(baseWeight,x),reps:p.hi,reason:'Hay una señal moderada de fatiga acumulada. Aunque el rendimiento permite progresar, GymPro mantendrá la carga para consolidar la recuperación antes de subir peso.'};
-  if(strongPerformance)return{weight:roundWeight(baseWeight+weightStep(x),x),reps:p.lo,reason:'Tu rendimiento ha sido sólido: has completado las series dentro del rango y la mayoría cerca del extremo superior. Subimos la carga y reiniciamos el rango.'};
+  if(strongPerformance&&learning.status==='struggling')return{weight:roundWeight(baseWeight,x),reps:p.hi,reason:'Este ejercicio está respondiendo peor que en exposiciones anteriores. GymPro aprende de ese patrón y mantiene la carga para consolidar repeticiones antes de volver a subir.'};
+  if(strongPerformance&&learning.status==='stable'&&learning.exposures>=3)return{weight:roundWeight(baseWeight,x),reps:p.hi,reason:'Este ejercicio ha sido estable pero todavía no muestra una respuesta consistente a la progresión. GymPro mantiene la carga para acumular otra exposición antes de subir.'};
+  if(strongPerformance)return{weight:roundWeight(baseWeight+weightStep(x),x),reps:p.lo,reason:learning.status==='progressing'?'Este ejercicio ha mostrado una respuesta progresiva en tus últimas exposiciones. GymPro aumenta la carga y reinicia el rango.':'Tu rendimiento ha sido sólido: has completado las series dentro del rango y la mayoría cerca del extremo superior. Subimos la carga y reiniciamos el rango.'};
   if(clearMiss||fatigueSignal)return{weight:roundWeight(baseWeight,x),reps:p.lo,reason:clearMiss?'La última sesión quedó por debajo del rango objetivo. Mantén la carga y recupera las repeticiones.':'La caída de rendimiento entre series sugiere que la carga o el esfuerzo fueron demasiado altos. Mantén la carga y prioriza completar el rango con buena técnica.'};
   return{weight:roundWeight(baseWeight,x),reps:p.hi,reason:'Mantén la carga y busca mejorar las repeticiones hasta el extremo superior del rango.'};
 }
