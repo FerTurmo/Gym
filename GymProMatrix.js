@@ -20,6 +20,7 @@
   const VERSION='1.2.0';
 
   const MUSCLES=['chest','back','shoulders','arms','legs','glutes','calves','core'];
+  const PRIORITY_PARENT={biceps:'arms',triceps:'arms',quadriceps:'legs',hamstrings:'legs',calves:'calves',glutes:'glutes',chest:'chest',back:'back',shoulders:'shoulders',core:'core',arms:'arms',legs:'legs'};
   const COMPONENTS={
     chest:['chest'],
     back:['back'],
@@ -117,7 +118,8 @@
       daysPerWeek:days,
       duration,
       equipment:uniq(p.equipment),
-      priority:uniq(p.priority).slice(0,2),
+      priorityRaw:uniq(p.priority),
+      priority:uniq(p.priority).map(x=>PRIORITY_PARENT[x]||x).filter(x=>MUSCLES.includes(x)),
       style:p.style||'balanced',
       split:p.split||'auto',
       protectedAreas:uniq(p.protectedAreas||p.limits),
@@ -402,6 +404,26 @@
     return p.equipment.includes(exerciseEquipment(ex));
   }
 
+  function exerciseFocus(ex){
+    const id=String(ex?.id||'').toLowerCase();
+    const name=String(ex?.name||'').toLowerCase();
+    const s=id+' '+name;
+    if(/biceps|curl/.test(s))return 'biceps';
+    if(/triceps|pushdown|push.?down/.test(s))return 'triceps';
+    if(/leg.?extension|quad|squat|leg.?press/.test(s))return 'quadriceps';
+    if(/leg.?curl|hamstring|rdl|romanian/.test(s))return 'hamstrings';
+    if(/calf|gemelo/.test(s))return 'calves';
+    if(/hip.?thrust|glute/.test(s))return 'glutes';
+    return null;
+  }
+
+  function exercisePriorityMatch(profile,ex,muscle){
+    const p=normalizeProfile(profile);
+    if(p.priority.includes(muscle))return true;
+    const focus=exerciseFocus(ex);
+    return !!focus&&p.priorityRaw.includes(focus);
+  }
+
   function exerciseUsage(history){
     const map={};
     arr(history).forEach(w=>arr(w.exercises).forEach(e=>{
@@ -429,7 +451,8 @@
       if(['muscle','bodybuilder','recomp'].includes(p.goal) && r.kind==='compound')score+=8;
       if(p.goal==='athletic' && ['compound','stability'].includes(r.kind))score+=12;
       if(p.goal==='sport' && ['compound','stability'].includes(r.kind))score+=10;
-      if(p.priority.includes(muscle))score+=15;
+      if(exercisePriorityMatch(p,e,muscle))score+=24;
+      else if(p.priority.includes(muscle))score+=15;
       return {e,score};
     }).sort((a,b)=>b.score-a.score);
     return candidates[0]?.e||null;
