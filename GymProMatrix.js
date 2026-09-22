@@ -66,7 +66,7 @@
   };
 
   const DURATION_CAP={30:12,45:17,60:21,75:26,90:30};
-  const DURATION_TARGET_EXERCISES={30:5,45:6,60:7,75:8,90:9};
+  const DURATION_TARGET_EXERCISES={30:5,45:6,60:7,75:9,90:10};
 
   // Evidence-informed starting ranges. These are not hard physiological limits.
   // ACSM 2026 highlights training all major muscle groups at least twice weekly when
@@ -328,8 +328,8 @@
   function exerciseMinutes(entry,rules){
     const r=rules?.[entry.exerciseId]||{};
     const kind=r.kind==='isolation'?'isolation':'compound';
-    const perSet=kind==='isolation'?1.65:2.15;
-    return 1.8+(entry.sets*perSet);
+    const perSet=kind==='isolation'?1.5:1.9;
+    return 1.5+(entry.sets*perSet);
   }
 
   function sessionTime(scheduleItem,rules){
@@ -446,7 +446,7 @@
             secondary:true
           };
           const nextTime=sessionTime({exercises:[...s.exercises,item]},rules);
-          if(nextTime>p.duration-1)continue;
+          if(nextTime>p.duration-.5)continue;
           s.exercises.push(item);
           added=true;
           break;
