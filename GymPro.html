@@ -631,4 +631,35 @@ let target=null;function openSub(name){target=decodeURIComponent(name);const x=E
     return window.GP_SUPER_MATRIX.validate(matrixPlan());
   };
 })();
-</script><script>\n(function(){\n  function setup(){\n    const app=document.getElementById("app"),dash=document.getElementById("dashboard");\n    if(!app||!dash)return;\n    const tabs=dash.querySelector(".tabs"),header=document.querySelector(".top");\n    if(!tabs||!header||tabs.__gpStickyReady)return;\n    tabs.__gpStickyReady=true;\n    let trigger=0;\n    function measure(){\n      tabs.classList.remove("gp-fixed");dash.classList.remove("gp-dashboard-tabs-fixed");\n      const headerHeight=header.getBoundingClientRect().height;\n      document.documentElement.style.setProperty("--gp-header-height",headerHeight+"px");\n      trigger=tabs.getBoundingClientRect().top+app.scrollTop;\n      update();\n    }\n    function update(){\n      const headerHeight=header.getBoundingClientRect().height;\n      document.documentElement.style.setProperty("--gp-header-height",headerHeight+"px");\n      const stuck=app.scrollTop>=trigger-headerHeight;\n      tabs.classList.toggle("gp-fixed",stuck);\n      dash.classList.toggle("gp-dashboard-tabs-fixed",stuck);\n    }\n    app.addEventListener("scroll",update,{passive:true});\n    window.addEventListener("resize",measure);\n    window.addEventListener("orientationchange",()=>setTimeout(measure,250));\n    new MutationObserver(()=>setTimeout(measure,0)).observe(dash,{childList:true,subtree:true});\n    measure();\n  }\n  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",setup);else setup();\n})();\n</script></body></html>
+</script><script>
+(function(){
+  function setup(){
+    const app=document.getElementById("app"),dash=document.getElementById("dashboard");
+    if(!app||!dash)return;
+    const tabs=dash.querySelector(".tabs"),header=document.querySelector(".top");
+    if(!tabs||!header||tabs.__gpStickyReady)return;
+    tabs.__gpStickyReady=true;
+    let trigger=0;
+    function measure(){
+      tabs.classList.remove("gp-fixed");dash.classList.remove("gp-dashboard-tabs-fixed");
+      const headerHeight=header.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--gp-header-height",headerHeight+"px");
+      trigger=tabs.getBoundingClientRect().top+app.scrollTop;
+      update();
+    }
+    function update(){
+      const headerHeight=header.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--gp-header-height",headerHeight+"px");
+      const stuck=app.scrollTop>=trigger-headerHeight;
+      tabs.classList.toggle("gp-fixed",stuck);
+      dash.classList.toggle("gp-dashboard-tabs-fixed",stuck);
+    }
+    app.addEventListener("scroll",update,{passive:true});
+    window.addEventListener("resize",measure);
+    window.addEventListener("orientationchange",()=>setTimeout(measure,250));
+    new MutationObserver(()=>setTimeout(measure,0)).observe(dash,{childList:true,subtree:true});
+    measure();
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",setup);else setup();
+})();
+</script></body></html>
