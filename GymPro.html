@@ -209,7 +209,7 @@ function dataQualityProfile(){
   hs.forEach(w=>(w.exercises||[]).forEach(e=>{
     const sets=e.sets||[];
     if(sets.some(s=>Number.isFinite(+s.reps)&&+s.reps>0)){const id=e.exerciseId||e.exerciseName;if(id)exerciseIds.add(id);}
-    missingWeight+=sets.filter(s=>Number.isFinite(+s.reps)&&+s.reps>0&&!Number.isFinite(+s.weight)).length;
+    missingWeight+=sets.filter(s=>Number.isFinite(+s.reps)&&+s.reps>0&&EX.find(x=>x.id===e.exerciseId)?.eq!=='bodyweight'&&!Number.isFinite(+s.weight)).length;
   }));
   const recent=hs.slice(0,6),recentDays=new Set(recent.map(w=>new Date(+w.date||0).toDateString())).size;
   const issues=[];
