@@ -194,9 +194,16 @@
   function frequency(profile,muscle,volume){
     const p=normalizeProfile(profile);
     if(volume<=0)return 0;
-    if(p.daysPerWeek<=2)return 1;
-    if(volume>=10)return p.daysPerWeek>=4?2:1;
-    if(volume>=6)return p.daysPerWeek>=5?2:1;
+    // Frequency is a volume-distribution tool. With only two mandatory days,
+    // touching the major groups on both days is usually the cleanest way to
+    // keep progression moving. With more days, a second exposure is preferred
+    // when the weekly workload is large enough to benefit from being split.
+    if(p.daysPerWeek===1)return 1;
+    if(p.daysPerWeek===2)return 2;
+    if(volume<6)return 1;
+    if(['muscle','bodybuilder','recomp'].includes(p.goal))return p.daysPerWeek>=3?2:1;
+    if(p.goal==='strength')return volume>=9&&p.daysPerWeek>=4?2:1;
+    if(['athletic','sport','health'].includes(p.goal))return volume>=7&&p.daysPerWeek>=3?2:1;
     return 1;
   }
 
@@ -276,6 +283,20 @@
       if(type==='hybrid')score+=12;
       if(type==='upperlower')score+=8;
       if(type==='ppl')score+=5;
+    }
+    // With only 2 mandatory sessions, a coach should normally prefer repeated
+    // full-body exposure over leaving an entire half of the body to one day.
+    if(p.daysPerWeek===1&&type==='fullbody')score+=30;
+    if(p.daysPerWeek===2&&type==='fullbody')score+=35;
+    if(p.daysPerWeek===2&&type!=='fullbody')score-=18;
+    if(p.daysPerWeek===3&&['muscle','bodybuilder','recomp'].includes(p.goal)){
+      if(type==='fullbody')score+=18;
+      if(type==='hybrid')score+=14;
+      if(type==='ppl')score-=4;
+    }
+    if(p.daysPerWeek>=5&&['muscle','bodybuilder'].includes(p.goal)){
+      if(type==='hybrid')score+=10;
+      if(type==='ppl')score+=8;
     }
     if(p.goal==='strength'){
       if(type==='upperlower')score+=14;
