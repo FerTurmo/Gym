@@ -302,15 +302,6 @@
     return clamp(Math.round(sets),1,4);
   }
 
-  function rir(profile,rule){
-    const p=normalizeProfile(profile),base=EXPERIENCE[p.experience].rpe;
-    let r=10-base;
-    if(PHASE[p.phaseIndex].effort>=3)r+=1;
-    if(p.goal==='strength' && rule?.kind==='compound')r=Math.max(1,r-.5);
-    if(p.goal==='health')r=Math.max(2,r);
-    return clamp(Math.round(r),1,4);
-  }
-
   function plan(profile,context){
     const p=normalizeProfile(profile);
     const history=arr(context?.history);
@@ -345,7 +336,6 @@
           exerciseName:ex.name,
           sets,
           reps,
-          rir:rir(p,rule),
           weeklyShare:share,
           frequency:freq,
           priority:p.priority.includes(m)
@@ -405,7 +395,7 @@
         'Frecuencia de estímulo',
         'Distribución por sesión',
         'Selección y rotación de ejercicios',
-        'Series + rango de repeticiones + RIR',
+        'Series + rango de repeticiones',
         'Progresión según rendimiento real'
       ],
       summary:'El plan se recalcula a partir del contexto actual; no es una rutina fija.'
