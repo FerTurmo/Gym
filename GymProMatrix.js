@@ -17,7 +17,7 @@
 (function(global){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
 
   const MUSCLES=['chest','back','shoulders','arms','legs','glutes','calves','core'];
   const COMPONENTS={
@@ -65,7 +65,8 @@
     advanced:{volume:1.04,setsCap:4,rpe:8.5,recovery:.95,frequencyCap:7}
   };
 
-  const DURATION_CAP={30:7,45:10,60:14,75:17,90:20};
+  const DURATION_CAP={30:12,45:17,60:21,75:26,90:30};
+  const DURATION_TARGET_EXERCISES={30:5,45:6,60:7,75:8,90:9};
 
   // Evidence-informed starting ranges. These are not hard physiological limits.
   // ACSM 2026 highlights training all major muscle groups at least twice weekly when
@@ -177,8 +178,11 @@
       if(m==='legs'||m==='glutes')target*=phys.lowerBody;
       if(p.daysPerWeek<3)target*=.82;
       if(p.daysPerWeek>=6)target*=.92;
-      if(p.duration<=30)target*=.78;
-      if(p.duration>=75)target*=1.05;
+      if(p.duration<=30)target*=.90;
+      else if(p.duration<=45)target*=.98;
+      else if(p.duration<=60)target*=1.05;
+      else if(p.duration<=75)target*=1.12;
+      else target*=1.18;
       if(protectedMuscles(p).has(m))target*=.72;
       const min=clamp(Math.round(b[0]*g.volume*.8),2,12);
       const max=clamp(Math.round(b[2]*Math.max(g.volume,1)),4,20);
@@ -271,9 +275,10 @@
     return map;
   }
 
-  function chooseExercise(profile,muscle,history,exercises,rules){
+  function chooseExercise(profile,muscle,history,exercises,rules,excludedIds){
     const p=normalizeProfile(profile);
-    const list=arr(exercises).filter(e=>e && e.m===muscle);
+    const excluded=new Set(arr(excludedIds));
+    const list=arr(exercises).filter(e=>e && e.m===muscle && !excluded.has(e.id));
     if(!list.length)return null;
     const usage=exerciseUsage(history);
     const protectedArea=p.protectedAreas.map(z=>String(z).toLowerCase()).filter(Boolean),protectedMuscleSet=protectedMuscles(p);
@@ -320,6 +325,29 @@
     return clamp(Math.round(sets),1,4);
   }
 
+  function exerciseMinutes(entry,rules){
+    const r=rules?.[entry.exerciseId]||{};
+    const kind=r.kind==='isolation'?'isolation':'compound';
+    const perSet=kind==='isolation'?1.65:2.15;
+    return 1.8+(entry.sets*perSet);
+  }
+
+  function sessionTime(scheduleItem,rules){
+    return scheduleItem.exercises.reduce((sum,x)=>sum+exerciseMinutes(x,rules),0);
+  }
+
+  function targetExerciseCount(duration){
+    const keys=Object.keys(DURATION_TARGET_EXERCISES).map(Number).sort((a,b)=>a-b);
+    const d=clamp(Number(duration)||60,keys[0],keys[keys.length-1]);
+    const exact=DURATION_TARGET_EXERCISES[d];
+    if(exact)return exact;
+    const lower=keys.filter(k=>k<=d).pop()||keys[0];
+    const upper=keys.find(k=>k>d)||keys[keys.length-1];
+    if(lower===upper)return DURATION_TARGET_EXERCISES[lower];
+    const t=(d-lower)/(upper-lower);
+    return Math.round(DURATION_TARGET_EXERCISES[lower]+t*(DURATION_TARGET_EXERCISES[upper]-DURATION_TARGET_EXERCISES[lower]));
+  }
+
   function plan(profile,context){
     const p=normalizeProfile(profile);
     const history=arr(context?.history);
@@ -328,22 +356,22 @@
     const volumes=weeklyVolume(p,history);
     const blueprint=sessionBlueprint(p);
     const schedule=blueprint.map((s,si)=>({index:si+1,name:s.name,groups:s.groups||[],exercises:[]}));
-    const used={};
+
     MUSCLES.forEach(m=>{
       const freq=frequency(p,m,volumes[m]);
       const shares=distribute(volumes[m],freq);
       shares.forEach(share=>{
         const candidates=schedule
-          .map((s,i)=>({s,i,load:s.exercises.reduce((a,x)=>a+x.sets,0)}))
+          .map((s,i)=>({s,i,load:s.exercises.reduce((a,x)=>a+x.sets,0),time:sessionTime(s,rules)}))
           .filter(x=>x.s.groups.includes(m) && !x.s.exercises.some(y=>y.muscle===m))
-          .sort((a,b)=>a.load-b.load);
+          .sort((a,b)=>a.time-b.time||a.load-b.load);
         const targetIndex=candidates.length?candidates[0].i:(
-          schedule.map((s,i)=>({s,i,load:s.exercises.reduce((a,x)=>a+x.sets,0)}))
+          schedule.map((s,i)=>({s,i,load:s.exercises.reduce((a,x)=>a+x.sets,0),time:sessionTime(s,rules)}))
             .filter(x=>x.s.groups.includes(m))
-            .sort((a,b)=>a.load-b.load)[0]?.i
+            .sort((a,b)=>a.time-b.time||a.load-b.load)[0]?.i
         );
         if(targetIndex===undefined)return;
-        const ex=chooseExercise(p,m,history,exercises,rules);
+        const ex=chooseExercise(p,m,history,exercises,rules,schedule[targetIndex].exercises.map(x=>x.exerciseId));
         if(!ex)return;
         const rule=rules[ex.id]||{};
         const reps=repRange(p,rule);
@@ -358,19 +386,88 @@
           frequency:freq,
           priority:p.priority.includes(m)
         });
-        used[ex.id]=(used[ex.id]||0)+1;
       });
     });
 
-    // Respect time: remove lowest-priority accessories until the session fits.
-    const cap=DURATION_CAP[p.duration]||14;
+    // Use the available time rather than treating duration as a fixed series cap.
+    // First preserve the planned work, then add useful secondary exercises when
+    // there is enough time and an unused exercise is available for that muscle.
     schedule.forEach(s=>{
-      let estimated=s.exercises.reduce((a,x)=>a+x.sets,0);
-      if(estimated>cap){
-        s.exercises.sort((a,b)=>Number(b.priority)-Number(a.priority));
-        while(estimated>cap && s.exercises.length){
-          const x=s.exercises[s.exercises.length-1];
-          if(x.sets>1){x.sets--;estimated--}else{s.exercises.pop();estimated--}
+      const targetCount=targetExerciseCount(p.duration);
+      const cap=DURATION_CAP[p.duration]||21;
+      let guard=0;
+
+      while(
+        s.exercises.length<targetCount &&
+        sessionTime(s,rules)<p.duration-2 &&
+        s.exercises.reduce((a,x)=>a+x.sets,0)<cap &&
+        guard++<MUSCLES.length*3
+      ){
+        const candidates=s.groups
+          .map(m=>{
+            const existing=s.exercises.filter(x=>x.muscle===m);
+            const currentSets=existing.reduce((a,x)=>a+x.sets,0);
+            const target=volumes[m]||0;
+            const need=Math.max(0,target-currentSets);
+            return {m,need,priority:p.priority.includes(m),existing};
+          })
+          .filter(x=>x.need>0)
+          .sort((a,b)=>Number(b.priority)-Number(a.priority)||b.need-a.need);
+
+        let added=false;
+        for(const candidate of candidates){
+          const ex=chooseExercise(
+            p,
+            candidate.m,
+            history,
+            exercises,
+            rules,
+            s.exercises.map(x=>x.exerciseId)
+          );
+          if(!ex)continue;
+          const rule=rules[ex.id]||{};
+          const reps=repRange(p,rule);
+          const sets=Math.min(
+            setsFor(p,rule,candidate.m,Math.min(candidate.need,3),p.duration),
+            candidate.need,
+            cap-s.exercises.reduce((a,x)=>a+x.sets,0)
+          );
+          if(sets<1)continue;
+
+          const item={
+            muscle:candidate.m,
+            exerciseId:ex.id,
+            exerciseName:ex.name,
+            sets,
+            reps,
+            weeklyShare:sets,
+            frequency:frequency(p,candidate.m,volumes[candidate.m]),
+            priority:p.priority.includes(candidate.m),
+            secondary:true
+          };
+          const nextTime=sessionTime({exercises:[...s.exercises,item]},rules);
+          if(nextTime>p.duration-1)continue;
+          s.exercises.push(item);
+          added=true;
+          break;
+        }
+        if(!added)break;
+      }
+
+      // Final time/volume guard. Remove the least important work only if the
+      // estimated session would exceed the user's available time.
+      while(sessionTime(s,rules)>p.duration && s.exercises.length){
+        const removable=s.exercises
+          .map((x,i)=>({x,i}))
+          .sort((a,b)=>{
+            const pa=Number(a.x.priority)+Number(!a.x.secondary)*.25;
+            const pb=Number(b.x.priority)+Number(!b.x.secondary)*.25;
+            return pa-pb||b.x.sets-a.x.sets;
+          })[0];
+        if(removable.x.sets>1){
+          removable.x.sets--;
+        }else{
+          s.exercises.splice(removable.i,1);
         }
       }
     });
