@@ -459,7 +459,7 @@ let target=null;function openSub(name){target=decodeURIComponent(name);const x=E
       weight:S.weight,
       fat:S.fat,
       physique:S.physique,
-      experience:S.experience,
+      experience:S.exp||S.experience,
       goal:S.goal,
       sport:S.sport||S.sports||null,
       daysPerWeek:S.minDays||3,
