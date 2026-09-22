@@ -308,8 +308,8 @@ function intelligentPriorityProfile(){
   const top=result.filter(x=>x.score>0).slice(0,4);
   return{level:quality.level,confidence:Math.min(1,quality.confidence,strategy.confidence||0),fatigue:fatigue.level,deload:deload.status,priorities:result,top,focus:top.length?top.map(x=>x.label).join(' · '):'Mantenimiento equilibrado'};
 }
-function recommendation(x){
-  const p=prescription(x),h=exerciseHistory(x);
+function recommendation(x,sessionIndex){
+  const p=sessionIndex==null?prescription(x):sessionPrescription(x,sessionIndex),h=exerciseHistory(x);
   if(x.eq==='bodyweight')return{weight:'',reps:p.hi,reason:'Ejercicio con peso corporal: GymPro ajusta el objetivo mediante repeticiones y no exige una carga externa.'};
   const stagnation=exerciseStagnation(x);
   const learning=exerciseLearningProfile(x);
@@ -391,10 +391,10 @@ function coachExplanation(x,r){
   if(quality.level==='low')evidence.push('calidad de datos limitada');
   return{title:'Por qué',text:why,evidence,confidence:Math.round(Math.min(1,quality.confidence,learning.confidence||1)*100),range:p.lo+'–'+p.hi};
 }
-function sessionPrescription(x,sessionIndex){
+function sessionPrescription(x,sessionIndex,sourceId){
   try{
     const plan=matrixPlan(),sessions=plan.sessions||[],s=sessions[sessionIndex];
-    const item=s&&(s.exercises||[]).find(e=>e.exerciseId===x.id);
+    const item=s&&(s.exercises||[]).find(e=>e.exerciseId===(sourceId||x.id));
     if(item){
       const base=EX_RULES[x.id]||{primary:x.m,secondary:[],kind:'compound',base:[item.reps[0],item.reps[1]],sets:item.sets};
       return{...base,sets:item.sets,lo:item.reps[0],hi:item.reps[1],reps:item.reps[0]+'–'+item.reps[1],weeklyShare:item.weeklyShare,frequency:item.frequency};
@@ -429,19 +429,19 @@ function resolveSessionExercise(x,sessionIndex){
   if(!sub)return EX.find(v=>v.id===x.exerciseId);
   return EX.find(v=>v.id===sub.toId)||EX.find(v=>v.name===sub.to)||EX.find(v=>v.id===x.exerciseId);
 }
-function exerciseFor(m,sessionIndex,forcedId){
-  const raw=forcedId?{exerciseId:forcedId}:null;const x=raw?resolveSessionExercise(raw,sessionIndex):preferred(m);if(!x)return'';
-  const rule=sessionPrescription(x,sessionIndex),n=rule.sets,key=workoutKey(sessionIndex,x),d=draftFor(key,n,x),r=recommendation(x),learning=exerciseLearningProfile(x),explain=coachExplanation(x,r);
+function exerciseFor(m,sessionIndex,forcedId,sourceIdOverride){
+  const sourceId=sourceIdOverride||forcedId||null,raw=forcedId?{exerciseId:forcedId}:null;const x=raw?resolveSessionExercise(raw,sessionIndex):preferred(m);if(!x)return'';
+  const rule=sessionPrescription(x,sessionIndex,sourceId),n=rule.sets,key=workoutKey(sessionIndex,x),d=draftFor(key,n,x),r=recommendation(x,sessionIndex),learning=exerciseLearningProfile(x),explain=coachExplanation(x,r);
   const first=!Array.isArray(S.workoutHistory)||!S.workoutHistory.length;
   const learningText=learning.status==='progressing'?'Respuesta histórica: progresando. GymPro puede aceptar una subida cuando el rendimiento actual lo confirma.':learning.status==='struggling'?'Respuesta histórica: sensible al aumento de carga. GymPro prioriza consolidar repeticiones antes de volver a subir.':learning.status==='stable'?'Respuesta histórica: estable. GymPro busca una exposición adicional antes de cambiar la carga.':'GymPro todavía está aprendiendo cómo respondes a este ejercicio.';
   const rows=d.sets.slice(0,n).map((s,i)=>`<div class="setrow"><div class="setnum">${i+1}</div><input class="setinput" inputmode="decimal" type="text" placeholder="${r.weight?r.weight+' kg':'kg'}" value="${s.weight??''}" onchange="setDraft('${key}',${i},'weight',this.value)"><input class="setinput" inputmode="numeric" type="text" placeholder="${r.reps}" value="${s.reps??''}" onchange="setDraft('${key}',${i},'reps',this.value)"></div>`).join('');
-  return `<div class="exercise" data-exercise-id="${x.id}"><div class="row"><div><b>${x.name}</b><div class="muscleline">Principal: ${rule.primary}${rule.secondary.length?' · También: '+rule.secondary.join(', '):''}</div><div class="mini" style="margin-top:4px">${learningText}</div></div><button class="smallbtn" onclick="openSub('${encodeURIComponent(x.name)}')">Cambiar</button></div>${first?'<div class="banner" style="margin-top:10px"><b>Primera vez en esta máquina</b><div class="mini" style="margin-top:5px">Pon un peso con el que te sientas cómodo y creas que puedes hacer el número de repeticiones indicado. Es mejor ser conservador y subir poco a poco el peso. GymPro utilizará tu rendimiento para ajustar las próximas sesiones.</div></div>':''}<div class="setlog"><div class="mini" style="display:grid;grid-template-columns:34px 1fr 1fr;gap:8px"><span>Serie</span><span>Peso (kg)</span><span>Reps (${rule.lo}–${rule.hi})</span></div>${rows}</div><div class="mini" style="margin-top:7px"><b>${explain.title}</b>: ${explain.text}<div style="margin-top:3px">${explain.evidence.length?explain.evidence.join(" · "):"Basado en la planificación actual."} · Confianza ${explain.confidence}%</div></div><div class="mini" style="margin-top:5px">Se guarda automáticamente. Al completar la sesión, este registro pasa al histórico.</div></div>`
+  return `<div class="exercise" data-exercise-id="${x.id}" data-source-exercise-id="${sourceId||x.id}"><div class="row"><div><b>${x.name}</b><div class="muscleline">Principal: ${rule.primary}${rule.secondary.length?' · También: '+rule.secondary.join(', '):''}</div><div class="mini" style="margin-top:4px">${learningText}</div></div><button class="smallbtn" onclick="openSub('${encodeURIComponent(x.name)}')">Cambiar</button></div>${first?'<div class="banner" style="margin-top:10px"><b>Primera vez en esta máquina</b><div class="mini" style="margin-top:5px">Pon un peso con el que te sientas cómodo y creas que puedes hacer el número de repeticiones indicado. Es mejor ser conservador y subir poco a poco el peso. GymPro utilizará tu rendimiento para ajustar las próximas sesiones.</div></div>':''}<div class="setlog"><div class="mini" style="display:grid;grid-template-columns:34px 1fr 1fr;gap:8px"><span>Serie</span><span>Peso (kg)</span><span>Reps (${rule.lo}–${rule.hi})</span></div>${rows}</div><div class="mini" style="margin-top:7px"><b>${explain.title}</b>: ${explain.text}<div style="margin-top:3px">${explain.evidence.length?explain.evidence.join(" · "):"Basado en la planificación actual."} · Confianza ${explain.confidence}%</div></div><div class="mini" style="margin-top:5px">Se guarda automáticamente. Al completar la sesión, este registro pasa al histórico.</div></div>`
 }
 function sessionMuscles(i){const plans=[['chest','back','legs','shoulders'],['back','legs','chest','arms'],['legs','chest','back','calves'],['shoulders','back','glutes','arms'],['legs','chest','shoulders','core'],['back','legs','arms','shoulders'],['glutes','legs','calves','core']];const base=plans[i%plans.length],profile=intelligentPriorityProfile(),rank=Object.fromEntries(profile.priorities.map((x,n)=>[x.muscle,n])),p=base.slice().sort((a,b)=>(rank[a]??99)-(rank[b]??99));return p}function workoutList(){let n=7,min=Math.max(1,Math.min(7,Number(S.minDays)||1)),Ss=S.sessionStatus||{};S.sessionStatus=Ss;let nav='<div class="gp-session-carousel" aria-label="Selector de sesiones"><button type="button" class="gp-session-arrow left" aria-label="Sesiones anteriores" onclick="scrollSessions(-1)">‹</button><div class="gp-session-nav" aria-label="Sesiones de la semana" aria-orientation="horizontal">';for(let i=0;i<n;i++){const optional=i>=min,done=!!Ss[i],cls=done?'completed':optional?'optional':'required';nav+=`<button type="button" class="gp-session-pill ${cls}" data-session="${i}">S.${i+1}</button>`}nav+='</div><button type="button" class="gp-session-arrow right" aria-label="Más sesiones" onclick="scrollSessions(1)">›</button></div><div id="gp-session-content"></div>';return nav}function sessionExercises(i){
   try{
     const plan=matrixPlan(),sessions=plan.sessions||[],s=sessions[i];
     if(s&&Array.isArray(s.exercises)&&s.exercises.length){
-      return s.exercises.map(x=>{const sub=substitutionFor(i,x.exerciseId),id=sub?.toId||x.exerciseId;return exerciseFor(x.muscle,i,id)}).filter(Boolean).join('');
+      return s.exercises.map(x=>{const sub=substitutionFor(i,x.exerciseId),id=sub?.toId||x.exerciseId;return exerciseFor(x.muscle,i,id,x.exerciseId)}).filter(Boolean).join('');
     }
   }catch(e){console.error('GymPro session matrix error',e)}
   return sessionMuscles(i).map(m=>exerciseFor(m,i)).join('');
@@ -450,7 +450,7 @@ function selectSession(i){const c=el('gp-session-content');if(!c)return;document
   if(!node.checked)return;
   const box=node.closest('.workout');
   const invalid=[...box.querySelectorAll('.exercise[data-exercise-id]')].some(ex=>{
-    const x=EX.find(v=>v.id===ex.dataset.exerciseId),rule=sessionPrescription(x,sessionIndex),inputs=[...ex.querySelectorAll('.setinput')];
+    const x=EX.find(v=>v.id===ex.dataset.exerciseId),sourceId=ex.dataset.sourceExerciseId||x.id,rule=sessionPrescription(x,sessionIndex,sourceId),inputs=[...ex.querySelectorAll('.setinput')];
     for(let i=0;i<rule.sets;i++){
       const weight=inputs[i*2]?.value??'',reps=inputs[i*2+1]?.value??'';
       if(reps===''||!Number.isFinite(Number(reps))||Number(reps)<=0)return true;
@@ -460,7 +460,7 @@ function selectSession(i){const c=el('gp-session-content');if(!c)return;document
   });
   if(invalid){node.checked=false;alert('Completa el peso y las repeticiones de todas las series antes de marcar la sesión como realizada.');return}
   const exercises=[...box.querySelectorAll('.exercise[data-exercise-id]')].map(ex=>{
-    const x=EX.find(v=>v.id===ex.dataset.exerciseId),inputs=[...ex.querySelectorAll('.setinput')],rule=sessionPrescription(x,sessionIndex),setRows=[];
+    const x=EX.find(v=>v.id===ex.dataset.exerciseId),inputs=[...ex.querySelectorAll('.setinput')],sourceId=ex.dataset.sourceExerciseId||x.id,rule=sessionPrescription(x,sessionIndex,sourceId),setRows=[];
     for(let i=0;i<rule.sets;i++){
       const weight=inputs[i*2]?.value,reps=inputs[i*2+1]?.value;
       setRows.push({set:i+1,weight:weight===''?null:+weight,reps:reps===''?null:+reps,completed:weight!==''||reps!==''});
