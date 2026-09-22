@@ -17,7 +17,7 @@
 (function(global){
   'use strict';
 
-  const VERSION='1.1.0';
+  const VERSION='1.2.0';
 
   const MUSCLES=['chest','back','shoulders','arms','legs','glutes','calves','core'];
   const COMPONENTS={
@@ -211,29 +211,145 @@
     return Array.from({length:freq},(_,i)=>base+(i<rem?1:0)).filter(x=>x>0);
   }
 
-  function splitFor(profile){
-    const p=normalizeProfile(profile);
-    if(p.split && p.split!=='auto')return p.split;
-    if(p.daysPerWeek<=3)return 'fullbody';
-    if(p.daysPerWeek===4)return 'upperlower';
-    if(p.daysPerWeek>=5)return 'ppl';
-    return 'fullbody';
+  // Session architecture is selected as an optimisation problem, not as a fixed split.
+  // The architecture is only the weekly scaffold: exercise selection, volume and
+  // recovery can still adapt afterwards.
+  const ARCHITECTURE_LIBRARY={
+    fullbody:{name:'Full body',groups:['legs','glutes','calves','chest','back','shoulders','arms','core'],type:'fullbody'},
+    upperlower:{name:'Superior / inferior',groups:[['chest','back','shoulders','arms','core'],['legs','glutes','calves','core']],type:'upperlower'},
+    pair:{name:'Pares musculares',groups:[['chest','arms'],['back','arms'],['legs','glutes','calves'],['shoulders','core']],type:'pair'},
+    ppl:{name:'Push / Pull / Legs',groups:[['chest','shoulders','arms'],['back','arms','core'],['legs','glutes','calves','core']],type:'ppl'},
+    hybrid:{name:'Híbrido',groups:[['chest','arms'],['back','arms'],['legs','glutes','calves','core'],['chest','back','shoulders','arms']],type:'hybrid'}
+  };
+
+  function architectureSequence(type,days){
+    const a=ARCHITECTURE_LIBRARY[type];
+    if(!a)return [];
+    if(type==='fullbody')return Array.from({length:days},()=>a.groups.slice());
+    if(type==='upperlower')return Array.from({length:days},(_,i)=>a.groups[i%2].slice());
+    if(type==='pair'||type==='ppl'||type==='hybrid'){
+      return Array.from({length:days},(_,i)=>a.groups[i%a.groups.length].slice());
+    }
+    return [];
   }
 
-  function sessionBlueprint(profile){
-    const p=normalizeProfile(profile),split=splitFor(p);
-    if(split==='fullbody'){
-      return Array.from({length:p.daysPerWeek},(_,i)=>({name:'Full body '+(i+1),groups:['legs','chest','back','shoulders','arms','core']}));
+  function architectureScore(profile,type,volumes,history){
+    const p=normalizeProfile(profile),seq=architectureSequence(type,p.daysPerWeek);
+    if(!seq.length)return -Infinity;
+    let score=0;
+
+    MUSCLES.forEach(m=>{
+      const exposures=seq.filter(g=>g.includes(m)).length;
+      if(exposures===0)score-=1000;
+      else score+=12;
+    });
+
+    MUSCLES.forEach(m=>{
+      const exposures=seq.filter(g=>g.includes(m)).length;
+      const desired=frequency(p,m,volumes[m]);
+      if(exposures===desired)score+=18;
+      else if(Math.abs(exposures-desired)===1)score+=7;
+      else score-=12*Math.abs(exposures-desired);
+    });
+
+    p.priority.forEach(m=>{
+      const exposures=seq.filter(g=>g.includes(m)).length;
+      if(exposures>=2)score+=18;
+      else if(exposures===1)score+=5;
+    });
+
+    MUSCLES.forEach(m=>{
+      for(let i=1;i<seq.length;i++)if(seq[i].includes(m)&&seq[i-1].includes(m))score-=7;
+    });
+
+    seq.forEach(groups=>{
+      if(groups.includes('chest')&&groups.includes('arms'))score+=7;
+      if(groups.includes('back')&&groups.includes('arms'))score+=7;
+      if(groups.includes('legs')&&groups.includes('glutes'))score+=7;
+      if(groups.includes('legs')&&groups.includes('calves'))score+=4;
+      if(groups.includes('shoulders')&&groups.includes('arms'))score+=4;
+      if(groups.length>=7)score-=5;
+    });
+
+    if(['muscle','bodybuilder','recomp'].includes(p.goal)){
+      if(type==='pair')score+=10;
+      if(type==='hybrid')score+=12;
+      if(type==='upperlower')score+=8;
+      if(type==='ppl')score+=5;
     }
-    if(split==='upperlower'){
-      const seq=['upper','lower'];
-      return Array.from({length:p.daysPerWeek},(_,i)=>({
-        name:seq[i%2]==='upper'?'Superior '+(Math.floor(i/2)+1):'Inferior '+(Math.floor(i/2)+1),
-        groups:seq[i%2]==='upper'?['chest','back','shoulders','arms','core']:['legs','glutes','calves','core']
-      }));
+    if(p.goal==='strength'){
+      if(type==='upperlower')score+=14;
+      if(type==='fullbody')score+=10;
+      if(type==='pair')score+=6;
+      if(type==='ppl')score-=4;
     }
-    const seq=[['chest','shoulders','arms'],['back','arms','core'],['legs','glutes','calves','core']];
-    return Array.from({length:p.daysPerWeek},(_,i)=>({name:['Push','Pull','Legs'][i%3]+' '+(Math.floor(i/3)+1),groups:seq[i%3]}));
+    if(['athletic','sport'].includes(p.goal)){
+      if(type==='fullbody')score+=15;
+      if(type==='hybrid')score+=12;
+      if(type==='upperlower')score+=6;
+    }
+    if(p.goal==='health'&&type==='fullbody')score+=18;
+
+    if(p.experience==='beginner'){
+      if(type==='fullbody')score+=16;
+      if(type==='pair'||type==='ppl')score-=10;
+    }else if(p.experience==='advanced'){
+      if(type==='pair'||type==='hybrid'||type==='ppl')score+=8;
+    }else{
+      if(type==='upperlower'||type==='hybrid')score+=6;
+    }
+
+    if(p.duration<=30){
+      if(type==='fullbody')score+=14;
+      if(type==='pair')score+=4;
+      if(type==='ppl')score-=10;
+    }else if(p.duration>=75){
+      if(type==='pair'||type==='hybrid')score+=10;
+      if(type==='fullbody')score-=5;
+    }
+
+    if(p.split&&p.split!=='auto'&&p.split===type)score+=35;
+
+    const fatigue=fatigueScore(history);
+    if(fatigue>.35){
+      if(type==='fullbody')score-=8;
+      if(type==='ppl')score-=3;
+      if(type==='pair'||type==='hybrid')score+=4;
+    }
+
+    return score;
+  }
+
+  function selectArchitecture(profile,volumes,history){
+    const p=normalizeProfile(profile);
+    return Object.keys(ARCHITECTURE_LIBRARY)
+      .map(type=>({type,score:architectureScore(p,type,volumes,history)}))
+      .sort((a,b)=>b.score-a.score)[0]?.type||'fullbody';
+  }
+
+  function splitFor(profile,volumes,history){
+    const p=normalizeProfile(profile);
+    if(p.split&&p.split!=='auto')return p.split;
+    return selectArchitecture(p,volumes,history);
+  }
+
+  function sessionBlueprint(profile,volumes,history){
+    const p=normalizeProfile(profile),type=splitFor(p,volumes,history);
+    const groups=architectureSequence(type,p.daysPerWeek);
+    const names={
+      fullbody:'Full body',
+      upperlower:['Superior','Inferior'],
+      pair:['Pecho + brazos','Espalda + brazos','Piernas + glúteos + gemelos','Hombros + core'],
+      ppl:['Push','Pull','Legs'],
+      hybrid:['Pecho + brazos','Espalda + brazos','Piernas + glúteos + core','Sesión de refuerzo']
+    };
+    return groups.map((g,i)=>{
+      let name;
+      if(type==='upperlower')name=names.upperlower[i%2]+' '+(Math.floor(i/2)+1);
+      else if(Array.isArray(names[type]))name=names[type][i%names[type].length]+' '+(Math.floor(i/names[type].length)+1);
+      else name=names[type]+' '+(i+1);
+      return{name,groups:g};
+    });
   }
 
   const PROTECTED_MUSCLES={
@@ -354,7 +470,7 @@
     const exercises=arr(context?.exercises);
     const rules=context?.rules||{};
     const volumes=weeklyVolume(p,history);
-    const blueprint=sessionBlueprint(p);
+    const blueprint=sessionBlueprint(p,volumes,history);
     const schedule=blueprint.map((s,si)=>({index:si+1,name:s.name,groups:s.groups||[],exercises:[]}));
 
     MUSCLES.forEach(m=>{
@@ -477,7 +593,7 @@
       profile:p,
       phase:PHASE[p.phaseIndex],
       weeklyVolume:volumes,
-      split:splitFor(p),
+      split:splitFor(p,volumes,history),
       sessions:schedule,
       recoveryModifier:recoveryModifier(p,history),
       fatigueScore:fatigueScore(history)
