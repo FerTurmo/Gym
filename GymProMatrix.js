@@ -258,12 +258,12 @@
     const list=arr(exercises).filter(e=>e && e.m===muscle);
     if(!list.length)return null;
     const usage=exerciseUsage(history);
-    const protectedArea=p.protectedAreas.join('|').toLowerCase();
+    const protectedArea=p.protectedAreas.map(z=>String(z).toLowerCase()).filter(Boolean);
     const candidates=list.map(e=>{
       const r=rules?.[e.id]||{};
       let score=100;
       if(!equipmentAllowed(p,e))score-=1000;
-      if(protectedArea && String(e.name||'').toLowerCase().includes(protectedArea))score-=200;
+      if(protectedArea.length && protectedArea.some(z=>String(e.name||'').toLowerCase().includes(z)))score-=200;
       if(usage[e.id])score-=usage[e.id]*7;
       if(p.goal==='strength' && r.kind==='compound')score+=18;
       if(['muscle','bodybuilder','recomp'].includes(p.goal) && r.kind==='compound')score+=8;
@@ -288,7 +288,7 @@
     return [lo,hi];
   }
 
-  function setsFor(profile,rule,muscleShare,sessionMinutes){
+  function setsFor(profile,rule,muscle,muscleShare,sessionMinutes){
     const p=normalizeProfile(profile),ph=PHASE[p.phaseIndex],exp=EXPERIENCE[p.experience];
     const kind=rule?.kind==='isolation'?'isolation':'compound';
     let sets=kind==='compound'?ph.compoundSets:ph.isolationSets;
@@ -298,7 +298,7 @@
     if(p.goal==='strength' && kind==='compound')sets=Math.min(sets,3);
     if(p.goal==='health')sets=Math.min(sets,2);
     if(p.goal==='fat')sets=Math.max(2,sets-1);
-    if(p.protectedAreas.includes(p.goal))sets=Math.max(1,sets-1);
+    if(p.protectedAreas.includes(muscle)||p.protectedAreas.some(z=>String(muscle).includes(String(z))))sets=Math.max(1,sets-1);
     return clamp(Math.round(sets),1,4);
   }
 
@@ -329,7 +329,7 @@
         if(!ex)return;
         const rule=rules[ex.id]||{};
         const reps=repRange(p,rule);
-        const sets=setsFor(p,rule,share,p.duration);
+        const sets=setsFor(p,rule,m,share,p.duration);
         schedule[targetIndex].exercises.push({
           muscle:m,
           exerciseId:ex.id,
