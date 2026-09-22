@@ -354,7 +354,8 @@ function longTermMemoryProfile(){
     const v=byId[id];v.exposures++;v.sets+=sets.length;v.reps.push(...sets.map(s=>+s.reps));v.loads.push(...sets.map(s=>+s.weight).filter(Number.isFinite));v.dates.push(+w.date||0);
   }));
   const exercises=Object.values(byId).map(v=>{
-    const learning=EX.find(x=>x.id===v.id)?exerciseLearningProfile(EX.find(x=>x.id===v.id)):null;
+    const exerciseRef=EX.find(x=>x.id===v.id)||EX.find(x=>x.name===v.name);
+    const learning=exerciseRef?exerciseLearningProfile(exerciseRef):null;
     const first=v.loads.length?v.loads[v.loads.length-1]:null,last=v.loads.length?v.loads[0]:null;
     const loadTrend=first!==null&&last!==null&&first>0?last/first-1:null;
     return{...v,loadTrend,avgReps:v.reps.length?v.reps.reduce((a,n)=>a+n,0)/v.reps.length:null,status:learning?learning.status:'learned',confidence:Math.min(1,v.exposures/6)};
@@ -561,7 +562,13 @@ let target=null;function openSub(name){target=decodeURIComponent(name);const x=E
           if(!groups.includes(x.muscle))groups.push(x.muscle);
         });
         const fallback=(s.groups||[]).filter(x=>!groups.includes(x));
-        return [...groups,...fallback].slice(0,4);
+        const all=[...groups,...fallback];
+        if(typeof intelligentPriorityProfile==='function'){
+          const priority=intelligentPriorityProfile();
+          const rank=Object.fromEntries((priority.priorities||[]).map((x,n)=>[x.muscle,n]));
+          all.sort((a,b)=>(rank[a]??99)-(rank[b]??99));
+        }
+        return all.slice(0,4);
       }
     }catch(e){}
     return ['chest','back','legs','shoulders'];
