@@ -54,7 +54,7 @@ function renderWeeklyCoachSummary(){
   return'<div class="card" style="margin-top:12px"><span class="tag">COACH · SEMANA</span><h3 style="margin-top:10px">'+s.title+'</h3><p class="muted">'+s.text+'</p><div class="metric" style="margin-top:10px"><div class="stat"><span>Adherencia</span><b>'+Math.round(s.adherence*100)+'%</b></div><div class="stat"><span>Volumen registrado</span><b>'+Math.round(s.volume)+' kg·reps</b></div><div class="stat"><span>Confianza</span><b>'+Math.round(s.confidence*100)+'%</b></div></div><div class="mini" style="margin-top:10px"><b>Progreso</b><ul>'+wins+'</ul><b>A vigilar</b><ul>'+watch+'</ul><b>Siguiente foco</b><div style="margin-top:4px">'+s.focus+'</div></div></div>';
 }
 function coachRecommendation(){const st=coachStats(),m=coachMatrix(st),strategy=dynamicGoalStrategy(),p=S.phaseState.index,w=weeks(),ready=(p<3)&&(S.completed>=24||w>=10)&&S.selfCheck!=='worse';const stagnantExercises=EX.filter(x=>exerciseStagnation(x).stagnant),fatigue=trainingFatigueSignal();
-let text='<span class="tag">COACH</span><h3 style="margin-top:10px">'+m.title+'</h3><p class="muted">'+m.text+'</p><div class="mini" style="margin-top:10px"><b>Estrategia dinámica · '+strategy.label+'</b><div style="margin-top:4px">'+strategy.reason+'</div></div>';
+let text='<span class="tag">COACH</span><h3 style="margin-top:10px">'+m.title+'</h3><p class="muted">'+m.text+'</p><div class="mini" style="margin-top:10px"><b>Estrategia dinámica · '+strategy.label+'</b><div style="margin-top:4px">'+strategy.reason+'</div><div style="margin-top:7px"><b>Calidad de datos · '+quality.level+'</b><div style="margin-top:3px">Confianza '+Math.round(quality.confidence*100)+'%'+(quality.issues.length?' · '+quality.issues[0]:'')+'</div></div></div>';
 if(stagnantExercises.length)text+='<div class="banner" style="margin-top:10px"><b>GymPro ha detectado posible estancamiento</b><div class="mini" style="margin-top:5px">Hay '+stagnantExercises.length+' ejercicio(s) con varias sesiones sin mejora clara. No voy a forzar una subida de peso: primero revisaré el historial y, si persiste, valorarás una rotación o ajuste.</div></div>';if(fatigue.level!=='low'&&fatigue.reasons.length)text+='<div class="banner warn" style="margin-top:10px"><b>Señal de fatiga acumulada</b><div class="mini" style="margin-top:5px">GymPro detecta '+(fatigue.level==='high'?'una señal alta':'una señal moderada')+' de fatiga a partir de tus entrenamientos registrados. '+fatigue.reasons.slice(0,2).join(' y ')+'. No aplicaré una subida automática de carga mientras esta señal esté activa.</div></div>';const deload=trainingDeloadSignal();if(deload.status==='recommended')text+='<div class="banner warn" style="margin-top:10px"><b>Deload recomendado</b><div class="mini" style="margin-top:5px">La combinación de fatiga, carga reciente y rendimiento indica que conviene reducir temporalmente el estímulo. '+deload.reasons.slice(0,2).join(' y ')+'.</div><div class="actions"><button class="btn primary" onclick="activateDeload()">Activar deload</button></div></div>';else if(deload.status==='consider')text+='<div class="banner" style="margin-top:10px"><b>Vigilar recuperación</b><div class="mini" style="margin-top:5px">Hay señales que justifican vigilar la recuperación antes de seguir aumentando el estímulo. '+deload.reasons.slice(0,2).join(' y ')+'.</div></div>';else if(deload.status==='active')text+='<div class="banner ok" style="margin-top:10px"><b>Deload activo</b><div class="mini" style="margin-top:5px">GymPro está reduciendo temporalmente el estímulo. El objetivo y la planificación base se mantienen intactos.</div></div>';if(ready)text+='<div class="banner ok" style="margin-top:10px"><b>También hay una decisión pendiente</b><div class="mini" style="margin-top:5px">Tu historial ya permite valorar el siguiente paso de fase.</div><div class="actions"><button class="btn primary" onclick="acceptPhase()">Pasar a la siguiente fase</button><button class="btn secondary" onclick="declinePhase()">Todavía no</button></div></div>';return{ready,text}}function renderRoadmap(){el('rTitle').textContent=labels[S.goal];el('rIntro').textContent='Las fases cambian según tu objetivo, tu punto de partida y tu experiencia. No son cuatro bloques genéricos iguales para todo el mundo.';el('summary').innerHTML=`<div class="stat"><span>Objetivo</span><b>${labels[S.goal]}${S.goal==='sport'?' · '+sports[S.sports]:''}</b></div><div class="stat"><span>Compromiso</span><b>${S.minDays} obligatorias + opcionales hasta 7</b></div><div class="stat"><span>Punto de partida</span><b>${phys[S.physique]}</b></div><div class="stat"><span>Experiencia</span><b>${exp[S.exp]}</b></div>`;const ps=phaseNames();el('phases').innerHTML=ps.map((p,i)=>{const info=phaseInfo(i);const current=i===S.phaseState.index;const final=i===ps.length-1;return `<div class="phase ${current?'current':'locked'}">${current?'<span class="tag">FASE ACTUAL</span>':final?'<span class="tag">OBJETIVO</span>':''}<h3>${p}</h3><div class="desc"><b>Qué buscamos:</b> ${info.objective}</div><div class="criterion"><span>${final?'Después de aquí:':'Pasas cuando:'}</span> ${info.advance}</div></div>${i<ps.length-1?'<div class="arrow">↓</div>':''}`}).join('');}function acceptPhase(){S.phaseState.index=Math.min(3,S.phaseState.index+1);S.phaseState.declines=0;S.phaseState.lastRecommendation=Date.now();S.selfCheck=null;save();renderRoadmap();renderDashboard()}function declinePhase(){S.phaseState.declines++;S.phaseState.lastRecommendation=Date.now();save();renderRoadmap();renderDashboard()}function preferred(m){let c=EX.filter(x=>x.m===m);if(!c.length)return null;const pref=S.equipment||[];if(pref.length){const matching=c.filter(x=>pref.includes(x.eq));if(matching.length)c=matching}const lastUsed=x=>{for(let i=S.workoutHistory.length-1;i>=0;i--){if((S.workoutHistory[i].exercises||[]).some(e=>e.exerciseId===x.id))return i}return -1};c.sort((a,b)=>lastUsed(a)-lastUsed(b));return c[0]}function exerciseHistory(x){for(let i=S.workoutHistory.length-1;i>=0;i--){const ex=(S.workoutHistory[i].exercises||[]).find(e=>e.exerciseId===x.id);if(ex&&ex.sets&&ex.sets.some(s=>s.weight!==null||s.reps!==null))return ex}return null}function workoutKey(sessionIndex,x){return 's'+sessionIndex+'_'+x.id}function weightStep(x){if(x.id==='leg_press')return 5;if(['lateral_raise','biceps_curl','incline_db_press'].includes(x.id))return 1;if(['cable_fly','triceps_pushdown','lat_pulldown','seated_cable_row','leg_curl','leg_extension'].includes(x.id))return 2.5;return 2.5}function roundWeight(v,x){const step=weightStep(x);return Math.max(step,Math.round(v/step)*step)}function initialWeight(x){const bw=Number(S.weight)||70;const e=S.exp||'beginner';const mult={beginner:.55,intermediate:.7,advanced:.85}[e]||.55;const ratios={bench_press:.65,incline_db_press:.22,cable_fly:.12,lat_pulldown:.55,barbell_row:.65,seated_cable_row:.5,overhead_press:.35,lateral_raise:.08,biceps_curl:.14,triceps_pushdown:.22,leg_press:1.35,rdl:.65,leg_curl:.32,leg_extension:.38,hip_thrust:.9,plank:0};let v=bw*(ratios[x.id]||.4)*mult;if(x.id==='plank')return'';if(['incline_db_press','lateral_raise','biceps_curl'].includes(x.id))v=Math.max(2,v);return roundWeight(v,x)}function exerciseStagnation(x){
   const history=[];
   for(let i=S.workoutHistory.length-1;i>=0&&history.length<6;i--){
@@ -201,8 +201,35 @@ function exerciseLearningProfile(x){
   else if(exposures>=3&&(progressionRate<=.2||trend<=-.75||rangeRate<.6))status='struggling';
   return{status,exposures,confidence:Math.min(1,exposures/6),progressionRate,trend,rangeRate,topRate};
 }
+function dataQualityProfile(){
+  const hs=(S.workoutHistory||[]).slice().sort((a,b)=>(+b.date||0)-(+a.date||0));
+  if(!hs.length)return{level:'insufficient',score:0,confidence:0,sessions:0,validSets:0,exercises:0,issues:['todavía no hay entrenamientos registrados']};
+  const validSets=hs.reduce((n,w)=>n+(w.exercises||[]).reduce((a,e)=>a+(e.sets||[]).filter(s=>Number.isFinite(+s.reps)&&+s.reps>0).length,0),0);
+  const exerciseIds=new Set(),missingWeight=0;
+  hs.forEach(w=>(w.exercises||[]).forEach(e=>{
+    const sets=e.sets||[];
+    if(sets.some(s=>Number.isFinite(+s.reps)&&+s.reps>0))exerciseIds.add(e.exerciseId);
+    missingWeight+=sets.filter(s=>Number.isFinite(+s.reps)&&+s.reps>0&&!Number.isFinite(+s.weight)).length;
+  }));
+  const recent=hs.slice(0,6),recentDays=new Set(recent.map(w=>new Date(+w.date||0).toDateString())).size;
+  const issues=[];
+  if(hs.length<3)issues.push('hay muy pocas sesiones para detectar patrones');
+  if(validSets<18)issues.push('hay pocas series válidas registradas');
+  if(exerciseIds.size<3)issues.push('hay poca variedad de ejercicios con historial');
+  if(missingWeight>Math.max(3,validSets*.25))issues.push('faltan pesos en una parte relevante de las series');
+  const volumeScore=Math.min(1,validSets/36),sessionScore=Math.min(1,hs.length/6),varietyScore=Math.min(1,exerciseIds.size/6),recencyScore=Math.min(1,recentDays/4);
+  const completeness=validSets?Math.max(0,1-missingWeight/validSets):0;
+  const score=Math.round(100*(sessionScore*.3+volumeScore*.25+varietyScore*.15+recencyScore*.15+completeness*.15));
+  const level=score>=75?'high':score>=45?'moderate':'low';
+  return{level,score,confidence:score/100,sessions:hs.length,validSets,exercises:exerciseIds.size,missingWeight,recentDays,issues};
+}
+function coachDataConfidence(){
+  const q=dataQualityProfile(),strategy=dynamicGoalStrategy();
+  return Math.min(q.confidence,strategy.confidence||0);
+}
 function dynamicGoalStrategy(){
   const goal=S.goal||'muscle',fatigue=trainingFatigueSignal(),deload=trainingDeloadSignal();
+  const quality=dataQualityProfile();
   const profiles=(EX||[]).map(exerciseLearningProfile);
   const experienced=profiles.filter(p=>p.exposures>=3);
   const struggling=experienced.filter(p=>p.status==='struggling').length;
@@ -222,14 +249,16 @@ function dynamicGoalStrategy(){
   }else if(experienced.length>=3&&progressingRate>=.5){
     mode='progressive';label='Progresión';reason='Una proporción relevante de ejercicios muestra una respuesta progresiva: aceptar subidas cuando el rendimiento actual las confirme.';
   }
-  const confidence=Math.min(1,experienced.length/6);
-  return{goal,mode,label,reason,confidence,experienced,progressing,struggling,progressingRate,strugglingRate};
+  const confidence=Math.min(1,experienced.length/6,quality.confidence);
+  if(quality.level==='low'&&mode!=='recovery'){mode='conservative';label='Datos insuficientes';reason='GymPro todavía no tiene suficiente historial fiable para hacer ajustes agresivos. Mantiene una estrategia conservadora hasta acumular más datos.';}
+  return{goal,mode,label,reason,confidence,quality,experienced,progressing,struggling,progressingRate,strugglingRate};
 }
 function recommendation(x){
   const p=prescription(x),h=exerciseHistory(x);
   const stagnation=exerciseStagnation(x);
   const learning=exerciseLearningProfile(x);
   const strategy=dynamicGoalStrategy();
+  const quality=dataQualityProfile();
   const fatigue=trainingFatigueSignal();
   const deload=trainingDeloadSignal();
   if(deload.status==='complete'){finishDeload();}
@@ -248,6 +277,7 @@ function recommendation(x){
   const fatigueSignal=setDrop>=3||minRatio<0.5;
   const strongPerformance=allSetsPresent&&topRatio>=0.75&&avgReps>=p.lo+(p.hi-p.lo)*0.7&&!fatigueSignal;
   if(deload.status==='active')return{weight:roundWeight(baseWeight*0.9,x),reps:p.hi,reason:'Deload activo: reducimos temporalmente el estímulo para facilitar la recuperación sin cambiar tu objetivo.'};
+  if(quality.level==='low'&&learning.exposures<3)return{weight:roundWeight(baseWeight,x),reps:p.hi,reason:'Datos insuficientes para aprender todavía de este ejercicio. GymPro mantiene la carga y espera más exposiciones fiables.'};
   if(fatigue.level==='high')return{weight:roundWeight(baseWeight,x),reps:p.lo,reason:'Hay una señal de fatiga acumulada. GymPro no subirá la carga ahora: mantén el peso y prioriza completar el rango con buena técnica.'};
   if(fatigue.level==='moderate'&&strongPerformance)return{weight:roundWeight(baseWeight,x),reps:p.hi,reason:'Hay una señal moderada de fatiga acumulada. Aunque el rendimiento permite progresar, GymPro mantendrá la carga para consolidar la recuperación antes de subir peso.'};
   if(strongPerformance&&['recovery','consolidate','consistency'].includes(strategy.mode))return{weight:roundWeight(baseWeight,x),reps:p.hi,reason:strategy.reason+' En este ejercicio, GymPro mantiene la carga en lugar de forzar una subida.'};
