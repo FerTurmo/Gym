@@ -179,7 +179,7 @@
       if(p.daysPerWeek>=6)target*=.92;
       if(p.duration<=30)target*=.78;
       if(p.duration>=75)target*=1.05;
-      if(p.protectedAreas.includes(m)||p.protectedAreas.some(z=>m.includes(z)))target*=.72;
+      if(protectedMuscles(p).has(m))target*=.72;
       const min=clamp(Math.round(b[0]*g.volume*.8),2,12);
       const max=clamp(Math.round(b[2]*Math.max(g.volume,1)),4,20);
       out[m]=clamp(Math.round(target),min,max);
@@ -232,6 +232,24 @@
     return Array.from({length:p.daysPerWeek},(_,i)=>({name:['Push','Pull','Legs'][i%3]+' '+(Math.floor(i/3)+1),groups:seq[i%3]}));
   }
 
+  const PROTECTED_MUSCLES={
+    shoulder:['shoulders'],
+    elbow:['arms'],
+    wrist:['arms'],
+    back:['back'],
+    hip:['glutes','legs'],
+    knee:['legs'],
+    ankle:['legs','calves'],
+    foot:['legs','calves']
+  };
+  function protectedMuscles(profile){
+    const p=normalizeProfile(profile),out=new Set();
+    p.protectedAreas.forEach(z=>{
+      const key=String(z).toLowerCase();
+      (PROTECTED_MUSCLES[key]||[]).forEach(m=>out.add(m));
+    });
+    return out;
+  }
   function exerciseEquipment(ex){
     const e=String(ex?.eq||'').toLowerCase();
     return e;
@@ -258,12 +276,12 @@
     const list=arr(exercises).filter(e=>e && e.m===muscle);
     if(!list.length)return null;
     const usage=exerciseUsage(history);
-    const protectedArea=p.protectedAreas.map(z=>String(z).toLowerCase()).filter(Boolean);
+    const protectedArea=p.protectedAreas.map(z=>String(z).toLowerCase()).filter(Boolean),protectedMuscleSet=protectedMuscles(p);
     const candidates=list.map(e=>{
       const r=rules?.[e.id]||{};
       let score=100;
       if(!equipmentAllowed(p,e))score-=1000;
-      if(protectedArea.length && protectedArea.some(z=>String(e.name||'').toLowerCase().includes(z)))score-=200;
+      if(protectedMuscleSet.has(muscle)||protectedArea.some(z=>String(e.name||'').toLowerCase().includes(z)))score-=200;
       if(usage[e.id])score-=usage[e.id]*7;
       if(p.goal==='strength' && r.kind==='compound')score+=18;
       if(['muscle','bodybuilder','recomp'].includes(p.goal) && r.kind==='compound')score+=8;
