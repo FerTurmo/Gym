@@ -672,34 +672,28 @@ const esToEn=new Map(PAIRS), enToEs=new Map(PAIRS.map(([a,b])=>[b,a]));
 function translateText(value,target){
   const map=target==="en"?esToEn:enToEs;
   let out=value;
-  [...map.keys()].sort((a,b)=>b.length-a.length).forEach(k=>{if(out.includes(k))out=out.split(k).join(map.get(k));});
+  [...map.keys()].sort((a,b)=>b.length-a.length).forEach(k=>{
+    if(out.includes(k)) out=out.split(k).join(map.get(k));
+  });
   return out;
 }
 function walk(root,target){
   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-  const nodes=[];let n;while(n=w.nextNode())nodes.push(n);
-  nodes.forEach(x=>{if(x.nodeValue.trim())x.nodeValue=translateText(x.nodeValue,target);});
+  const nodes=[]; let n;
+  while(n=w.nextNode()) nodes.push(n);
+  nodes.forEach(x=>{if(x.nodeValue.trim()) x.nodeValue=translateText(x.nodeValue,target);});
   root.querySelectorAll("input[placeholder],button[title],input[aria-label]").forEach(x=>{
-    ["placeholder","title","aria-label"].forEach(a=>{if(x.hasAttribute(a))x.setAttribute(a,translateText(x.getAttribute(a),target));});
+    ["placeholder","title","aria-label"].forEach(a=>{
+      if(x.hasAttribute(a)) x.setAttribute(a,translateText(x.getAttribute(a),target));
+    });
   });
 }
 function applyLanguage(){
   document.documentElement.lang=lang;
   walk(document.body,lang);
   const b=document.getElementById("langToggle");
-  if(b)b.textContent=lang==="es"?"EN":"ES";
+  if(b) b.textContent=lang==="es"?"EN":"ES";
   localStorage.setItem("gympro_lang",lang);
-}
-window.toggleLanguage=function(){lang=lang==="es"?"en":"es";applyLanguage();};
-window.gymProApplyLanguage=applyLanguage;
-let observer;
-function observeLanguage(){
-  observer=new MutationObserver(()=>{
-    observer.disconnect();
-    applyLanguage();
-    observer.observe(document.body,{childList:true,subtree:true});
-  });
-  observer.observe(document.body,{childList:true,subtree:true});
 }
 function toggleLanguage(){
   lang=lang==="es"?"en":"es";
@@ -709,7 +703,12 @@ window.toggleLanguage=toggleLanguage;
 window.gymProApplyLanguage=applyLanguage;
 window.addEventListener("DOMContentLoaded",()=>{
   applyLanguage();
-  observeLanguage();
+  const observer=new MutationObserver(()=>{
+    observer.disconnect();
+    applyLanguage();
+    observer.observe(document.body,{childList:true,subtree:true});
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
 });
 })();
 </script></body></html>
