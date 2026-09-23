@@ -701,6 +701,7 @@ function toggleLanguage(){
 }
 window.toggleLanguage=toggleLanguage;
 window.gymProApplyLanguage=applyLanguage;
+window.addEventListener("DOMContentLoaded",()=>{const b=document.getElementById("langToggle");if(b)b.addEventListener("click",toggleLanguage);});
 window.addEventListener("DOMContentLoaded",()=>{
   applyLanguage();
   const observer=new MutationObserver(()=>{
